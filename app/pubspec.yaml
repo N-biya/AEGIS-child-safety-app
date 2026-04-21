@@ -1,0 +1,46 @@
+name: aegis
+description: AEGIS — Child safety wearable band parent monitoring app.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
+  firebase_messaging: ^15.0.0
+
+  # Maps (free, no API key)
+  flutter_map: ^7.0.0
+  latlong2: ^0.9.0
+
+  # Charts
+  fl_chart: ^0.68.0
+
+  # Icons (Lucide stroke icons — no Material Icons, no emojis)
+  lucide_icons: ^0.257.0
+
+  # Fonts
+  google_fonts: ^6.2.0
+
+  # State management
+  provider: ^6.1.0
+
+  # Utilities
+  intl: ^0.19.0
+  shared_preferences: ^2.2.0
+  uuid: ^4.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

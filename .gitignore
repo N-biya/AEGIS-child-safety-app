@@ -1,0 +1,64 @@
+# ── Python / ML ──────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.pkl
+*.h5
+ml/wesad_data/
+ml/WESAD/
+venv/
+.venv/
+
+# ── Flutter / Dart ───────────────────────────
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/build/
+app/.fvm/
+app/android/.gradle/
+app/android/local.properties
+app/android/key.properties
+app/ios/.symlinks/
+app/ios/Pods/
+app/ios/Flutter/Flutter.framework
+app/ios/Flutter/Flutter.podspec
+*.iml
+
+# ── Firebase (CRITICAL — never commit these) ──
+google-services.json
+GoogleService-Info.plist
+app/lib/firebase_options.dart
+**/firebase_options.dart
+.firebaserc
+firebase.json
+serviceAccountKey.json
+*.jks
+*.keystore
+
+# ── ESP32 / PlatformIO ───────────────────────
+firmware/.pio/
+firmware/.vscode/
+firmware/include/secrets.h
+
+# ── Secrets and credentials ──────────────────
+.env
+.env.local
+secrets.h
+secrets.json
+*.pem
+*.key
+*.cert
+config/secrets/
+
+# ── OS files ─────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE files ────────────────────────────────
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
