@@ -32,7 +32,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
     final alerts = _filtered;
 
     return Scaffold(
-      backgroundColor: aegisCream,
+      backgroundColor: AegisColors.bg(context),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,7 +43,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Filter pills
+            // ── Filter pills ────────────────────────────────────────────
             SizedBox(
               height: 36,
               child: ListView.separated(
@@ -60,13 +60,17 @@ class _AlertsScreenState extends State<AlertsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: active ? aegisPink : aegisPinkLight,
+                        color: active
+                            ? aegisPink
+                            : AegisColors.pinkLight(context),
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Text(
                         _filters[i],
                         style: AppTextStyles.label.copyWith(
-                          color: active ? Colors.white : aegisTextMid,
+                          color: active
+                              ? Colors.white
+                              : AegisColors.textMid(context),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -102,7 +106,7 @@ class _EmptyState extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: aegisMintLight,
               shape: BoxShape.circle,
             ),
@@ -112,7 +116,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text('All clear', style: AppTextStyles.h3),
           const SizedBox(height: 6),
-          Text(
+          const Text(
             'No alerts recorded for this period',
             style: AppTextStyles.caption,
           ),

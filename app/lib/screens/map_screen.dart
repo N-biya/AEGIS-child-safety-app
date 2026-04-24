@@ -34,12 +34,13 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final child = DummyDataService.dummyChild;
+    final child   = DummyDataService.dummyChild;
+    final cardBg  = AegisColors.card(context);
 
     return Scaffold(
       body: Stack(
         children: [
-          // Full screen map
+          // ── Full-screen map ───────────────────────────────────────────
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -77,28 +78,31 @@ class _MapScreenState extends State<MapScreen> {
             ],
           ),
 
-          // Recenter button
+          // ── Recenter button ───────────────────────────────────────────
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             left: 16,
             child: _FloatingIconButton(
               icon: LucideIcons.locate,
+              cardBg: cardBg,
               onTap: () => _mapController.move(_childPos, 16),
             ),
           ),
 
-          // Geofence edit button
+          // ── Geofence edit button ──────────────────────────────────────
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             right: 16,
             child: _FloatingIconButton(
               icon: LucideIcons.circleDashed,
-              onTap: () => setState(() => _editingGeofence = !_editingGeofence),
+              cardBg: cardBg,
+              onTap: () =>
+                  setState(() => _editingGeofence = !_editingGeofence),
               active: _editingGeofence,
             ),
           ),
 
-          // Bottom info card
+          // ── Bottom info card ──────────────────────────────────────────
           Positioned(
             bottom: 0,
             left: 16,
@@ -113,7 +117,7 @@ class _MapScreenState extends State<MapScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: aegisCard,
+                        color: cardBg,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -143,10 +147,10 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-                  decoration: const BoxDecoration(
-                    color: aegisCard,
+                  decoration: BoxDecoration(
+                    color: cardBg,
                     borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(24)),
+                        const BorderRadius.vertical(top: Radius.circular(24)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +182,8 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${_childPos.latitude.toStringAsFixed(5)}, ${_childPos.longitude.toStringAsFixed(5)}',
+                        '${_childPos.latitude.toStringAsFixed(5)}, '
+                        '${_childPos.longitude.toStringAsFixed(5)}',
                         style: AppTextStyles.caption,
                       ),
                       const SizedBox(height: 4),
@@ -275,11 +280,13 @@ class _ChildMarkerState extends State<_ChildMarker>
 class _FloatingIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
+  final Color cardBg;
   final bool active;
 
   const _FloatingIconButton({
     required this.icon,
     required this.onTap,
+    required this.cardBg,
     this.active = false,
   });
 
@@ -291,7 +298,7 @@ class _FloatingIconButton extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: active ? aegisPink : aegisCard,
+          color: active ? aegisPink : cardBg,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
@@ -304,7 +311,7 @@ class _FloatingIconButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 18,
-          color: active ? Colors.white : aegisText,
+          color: active ? Colors.white : AegisColors.text(context),
         ),
       ),
     );

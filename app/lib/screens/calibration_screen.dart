@@ -18,9 +18,9 @@ class _CalibrationScreenState extends State<CalibrationScreen>
   final int _daysComplete = 3;
   final int _totalDays = 7;
 
-  String _hr = '--';
+  String _hr   = '--';
   String _spo2 = '--';
-  String _gsr = '--';
+  String _gsr  = '--';
   String _temp = '--';
 
   @override
@@ -52,13 +52,16 @@ class _CalibrationScreenState extends State<CalibrationScreen>
 
   @override
   Widget build(BuildContext context) {
-    final child = DummyDataService.dummyChild;
+    final child  = DummyDataService.dummyChild;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [aegisPinkPale, aegisLavenderLight],
+            colors: isDark
+                ? [darkPinkPale, darkCard]
+                : [aegisPinkPale, aegisLavenderLight],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -72,8 +75,7 @@ class _CalibrationScreenState extends State<CalibrationScreen>
                 const SizedBox(height: 16),
                 Text(
                   'Getting to know',
-                  style: AppTextStyles.h3
-                      .copyWith(color: aegisTextMid),
+                  style: AppTextStyles.h3.copyWith(color: aegisTextSoft),
                 ),
                 Text(
                   child.name,
@@ -82,7 +84,7 @@ class _CalibrationScreenState extends State<CalibrationScreen>
                 ),
                 const SizedBox(height: 40),
 
-                // Progress ring
+                // ── Progress ring ───────────────────────────────────────
                 SizedBox(
                   width: 200,
                   height: 200,
@@ -120,11 +122,11 @@ class _CalibrationScreenState extends State<CalibrationScreen>
                 ),
                 const SizedBox(height: 24),
 
-                // Explanation card
+                // ── Explanation card ────────────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: aegisCard,
+                    color: AegisColors.card(context),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
@@ -159,16 +161,16 @@ class _CalibrationScreenState extends State<CalibrationScreen>
                 ),
                 const SizedBox(height: 24),
 
-                // Live readings
-                Text('Live readings', style: AppTextStyles.label),
+                // ── Live readings ───────────────────────────────────────
+                Text('Current readings', style: AppTextStyles.label),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _ReadingChip(label: 'HR', value: _hr, color: aegisPinkLight),
+                    _ReadingChip(label: 'HR',   value: _hr,   color: aegisPinkLight),
                     _ReadingChip(label: 'SpO2', value: _spo2, color: aegisMintLight),
-                    _ReadingChip(label: 'GSR', value: _gsr, color: aegisLavenderLight),
+                    _ReadingChip(label: 'GSR',  value: _gsr,  color: aegisLavenderLight),
                     _ReadingChip(label: 'Temp', value: _temp, color: aegisPeachLight),
                   ],
                 ),
@@ -178,7 +180,9 @@ class _CalibrationScreenState extends State<CalibrationScreen>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 20, vertical: 12),
                   decoration: BoxDecoration(
-                    color: aegisLavenderLight,
+                    color: isDark
+                        ? aegisLavender.withOpacity(0.2)
+                        : aegisLavenderLight,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -190,7 +194,7 @@ class _CalibrationScreenState extends State<CalibrationScreen>
                         child: Text(
                           'Alerts will activate on Day 8',
                           style: AppTextStyles.body
-                              .copyWith(color: aegisTextMid),
+                              .copyWith(color: aegisTextSoft),
                         ),
                       ),
                     ],
@@ -224,8 +228,8 @@ class _ReadingChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('$label  ',
-              style:
-                  AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700)),
+              style: AppTextStyles.caption
+                  .copyWith(fontWeight: FontWeight.w700)),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: Text(value,
@@ -243,26 +247,26 @@ class _RingPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
+    final cx     = size.width / 2;
+    final cy     = size.height / 2;
     final radius = size.width / 2 - 12;
     const strokeWidth = 12.0;
-    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: radius);
+    final rect   = Rect.fromCircle(center: Offset(cx, cy), radius: radius);
 
     final bgPaint = Paint()
-      ..color = aegisPinkLight
-      ..style = PaintingStyle.stroke
+      ..color       = aegisPinkLight
+      ..style       = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap   = StrokeCap.round;
     canvas.drawCircle(Offset(cx, cy), radius, bgPaint);
 
     final fgPaint = Paint()
       ..shader = const LinearGradient(
         colors: [aegisPink, aegisPinkDark],
       ).createShader(rect)
-      ..style = PaintingStyle.stroke
+      ..style       = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap   = StrokeCap.round;
     canvas.drawArc(
       rect,
       -math.pi / 2,

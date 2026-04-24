@@ -4,11 +4,11 @@ import 'app_colors.dart';
 class AppTextStyles {
   AppTextStyles._();
 
+  // Primary text — no color, inherits from DefaultTextStyle/theme (dark-mode safe)
   static const TextStyle h1 = TextStyle(
     fontFamily: 'Nunito',
     fontSize: 28,
     fontWeight: FontWeight.w700,
-    color: aegisText,
     letterSpacing: -0.5,
   );
 
@@ -16,21 +16,18 @@ class AppTextStyles {
     fontFamily: 'Nunito',
     fontSize: 22,
     fontWeight: FontWeight.w700,
-    color: aegisText,
   );
 
   static const TextStyle h3 = TextStyle(
     fontFamily: 'Nunito',
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    color: aegisText,
   );
 
   static const TextStyle body = TextStyle(
     fontFamily: 'Nunito',
     fontSize: 15,
     fontWeight: FontWeight.w400,
-    color: aegisText,
     height: 1.5,
   );
 
@@ -38,14 +35,20 @@ class AppTextStyles {
     fontFamily: 'Nunito',
     fontSize: 15,
     fontWeight: FontWeight.w600,
-    color: aegisText,
   );
 
+  static const TextStyle vitalNumber = TextStyle(
+    fontFamily: 'Nunito',
+    fontSize: 36,
+    fontWeight: FontWeight.w800,
+  );
+
+  // Secondary text — retains color; aegisTextSoft is readable on dark bg (5.8:1)
   static const TextStyle label = TextStyle(
     fontFamily: 'Nunito',
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: aegisTextMid,
+    color: aegisTextSoft,
     letterSpacing: 0.3,
   );
 
@@ -54,12 +57,5 @@ class AppTextStyles {
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: aegisTextSoft,
-  );
-
-  static const TextStyle vitalNumber = TextStyle(
-    fontFamily: 'Nunito',
-    fontSize: 36,
-    fontWeight: FontWeight.w800,
-    color: aegisText,
   );
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../services/dummy_data_service.dart';
 import '../models/vital_model.dart';
 import '../utils/app_colors.dart';
@@ -7,7 +8,8 @@ import '../utils/app_text_styles.dart';
 import '../widgets/section_header.dart';
 
 class AnalyticsScreen extends StatefulWidget {
-  const AnalyticsScreen({super.key});
+  final bool showBackButton;
+  const AnalyticsScreen({super.key, this.showBackButton = false});
 
   @override
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
@@ -16,16 +18,24 @@ class AnalyticsScreen extends StatefulWidget {
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   String _period = '7 Days';
   static const _periods = ['Today', '7 Days', '30 Days'];
-  late List<VitalModel> _history;
 
-  @override
-  void initState() {
-    super.initState();
-    _history = DummyDataService.historicalVitals;
+  List<VitalModel> get _history {
+    final all = DummyDataService.historicalVitals;
+    switch (_period) {
+      case 'Today':
+        final cutoff = DateTime.now().subtract(const Duration(hours: 24));
+        return all.where((v) => v.timestamp.isAfter(cutoff)).toList();
+      case '30 Days':
+        // Repeat 7-day data ~4x to simulate 30 days
+        return [...all, ...all, ...all, ...all];
+      default:
+        return all;
+    }
   }
 
   List<FlSpot> _spots(String type) {
-    return _history.asMap().entries.map((e) {
+    final history = _history;
+    return history.asMap().entries.map((e) {
       double y;
       switch (type) {
         case 'hr':   y = e.value.heartRate.toDouble(); break;
@@ -52,7 +62,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           height: 160,
           padding: const EdgeInsets.fromLTRB(0, 16, 16, 8),
           decoration: BoxDecoration(
-            color: aegisCard,
+            color: AegisColors.card(context),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -88,7 +98,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 show: true,
                 drawVerticalLine: false,
                 getDrawingHorizontalLine: (_) => FlLine(
-                  color: aegisWarm,
+                  color: AegisColors.warm(context),
                   strokeWidth: 1,
                 ),
               ),
@@ -113,7 +123,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ),
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => aegisCard,
+                  getTooltipColor: (_) => AegisColors.card(context),
                   getTooltipItems: (spots) => spots
                       .map((s) => LineTooltipItem(
                             '${s.y.toStringAsFixed(1)} $unit',
@@ -141,7 +151,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           height: 160,
           padding: const EdgeInsets.fromLTRB(0, 16, 16, 8),
           decoration: BoxDecoration(
-            color: aegisCard,
+            color: AegisColors.card(context),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -167,7 +177,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 show: true,
                 drawVerticalLine: false,
                 getDrawingHorizontalLine: (_) => FlLine(
-                  color: aegisWarm,
+                  color: AegisColors.warm(context),
                   strokeWidth: 1,
                 ),
               ),
@@ -211,18 +221,38 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: aegisCream,
+      backgroundColor: AegisColors.bg(context),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Header ─────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Text('Analytics', style: AppTextStyles.h2),
+              child: Row(
+                children: [
+                  if (widget.showBackButton) ...[
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AegisColors.card(context),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(LucideIcons.arrowLeft,
+                            size: 18, color: aegisPinkDark),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Text('Analytics', style: AppTextStyles.h2),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 
-            // Period pills
+            // ── Period pills ────────────────────────────────────────────
             SizedBox(
               height: 36,
               child: ListView.separated(
@@ -239,13 +269,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: active ? aegisPink : aegisPinkLight,
+                        color: active
+                            ? aegisPink
+                            : AegisColors.pinkLight(context),
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Text(
                         _periods[i],
                         style: AppTextStyles.label.copyWith(
-                          color: active ? Colors.white : aegisTextMid,
+                          color: active
+                              ? Colors.white
+                              : AegisColors.textMid(context),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -256,6 +290,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
             const SizedBox(height: 16),
 
+            // ── Charts ─────────────────────────────────────────────────
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),

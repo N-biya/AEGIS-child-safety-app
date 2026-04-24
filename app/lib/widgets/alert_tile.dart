@@ -29,7 +29,7 @@ class AlertTile extends StatelessWidget {
 
   String _timeAgo() {
     final diff = DateTime.now().difference(alert.timestamp);
-    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inDays > 0)  return '${diff.inDays}d ago';
     if (diff.inHours > 0) return '${diff.inHours}h ago';
     return '${diff.inMinutes}m ago';
   }
@@ -39,7 +39,7 @@ class AlertTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: aegisCard,
+        color: AegisColors.card(context),
         borderRadius: BorderRadius.circular(16),
         border: Border(
           left: BorderSide(color: _borderColor, width: 4),
@@ -77,8 +77,9 @@ class AlertTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${alert.latitude.toStringAsFixed(4)}, ${alert.longitude.toStringAsFixed(4)}',
-                    style: AppTextStyles.caption.copyWith(color: aegisTextSoft),
+                    '${alert.latitude.toStringAsFixed(4)}, '
+                    '${alert.longitude.toStringAsFixed(4)}',
+                    style: AppTextStyles.caption,
                   ),
                 ],
               ),
@@ -89,11 +90,10 @@ class AlertTile extends StatelessWidget {
                 Text(_timeAgo(), style: AppTextStyles.caption),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: alert.resolved
-                        ? aegisMintLight
-                        : aegisRoseLight,
+                    color: alert.resolved ? aegisMintLight : aegisRoseLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

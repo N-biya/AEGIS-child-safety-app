@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'router/app_router.dart';
 import 'services/auth_service.dart';
 import 'utils/app_theme.dart';
+import 'utils/theme_provider.dart';
 
 void main() {
   runApp(const AegisApp());
@@ -17,15 +18,22 @@ class AegisApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
       ],
-      child: MaterialApp(
-        title: 'AEGIS',
-        debugShowCheckedModeBanner: false,
-        theme: aegisTheme.copyWith(
-          textTheme: GoogleFonts.nunitoTextTheme(aegisTheme.textTheme),
+      child: Consumer<ThemeNotifier>(
+        builder: (_, notifier, __) => MaterialApp(
+          title: 'AEGIS',
+          debugShowCheckedModeBanner: false,
+          themeMode: notifier.themeMode,
+          theme: aegisTheme.copyWith(
+            textTheme: GoogleFonts.nunitoTextTheme(aegisTheme.textTheme),
+          ),
+          darkTheme: aegisDarkTheme.copyWith(
+            textTheme: GoogleFonts.nunitoTextTheme(aegisDarkTheme.textTheme),
+          ),
+          initialRoute: '/',
+          onGenerateRoute: AppRouter.generateRoute,
         ),
-        initialRoute: '/',
-        onGenerateRoute: AppRouter.generateRoute,
       ),
     );
   }

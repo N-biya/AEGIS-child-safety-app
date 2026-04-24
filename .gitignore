@@ -62,3 +62,6 @@ desktop.ini
 .vscode/settings.json
 *.swp
 *.swo
+
+# ── Claude Code ──────────────────────────────
+.claude/

@@ -14,20 +14,22 @@ class AegisBottomNav extends StatelessWidget {
   });
 
   static const _items = [
-    _NavItem(LucideIcons.home, 'Home'),
-    _NavItem(LucideIcons.mapPin, 'Map'),
-    _NavItem(LucideIcons.bell, 'Alerts'),
+    _NavItem(LucideIcons.home,     'Home'),
+    _NavItem(LucideIcons.mapPin,   'Map'),
+    _NavItem(LucideIcons.bell,     'Alerts'),
     _NavItem(LucideIcons.settings, 'Settings'),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final bg = AegisColors.card(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Container(
         height: 64,
         decoration: BoxDecoration(
-          color: aegisCard,
+          color: bg,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -49,7 +51,9 @@ class AegisBottomNav extends StatelessWidget {
                 curve: Curves.easeInOut,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: active ? aegisPinkLight : Colors.transparent,
+                  color: active
+                      ? AegisColors.pinkLight(context)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -65,7 +69,8 @@ class AegisBottomNav extends StatelessWidget {
                       _items[i].label,
                       style: AppTextStyles.caption.copyWith(
                         color: active ? aegisPinkDark : aegisTextSoft,
-                        fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+                        fontWeight:
+                            active ? FontWeight.w700 : FontWeight.w400,
                         fontSize: 10,
                       ),
                     ),
