@@ -6,17 +6,19 @@ import '../utils/app_text_styles.dart';
 import '../widgets/aegis_button.dart';
 import '../widgets/aegis_text_field.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
+  final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
   bool _loading = false;
   String? _error;
 
@@ -40,17 +42,30 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void dispose() {
     _slideCtrl.dispose();
+    _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _confirmPassCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _signIn() async {
+  Future<void> _signUp() async {
+    final name = _nameCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+    final pass = _passCtrl.text;
+    final confirm = _confirmPassCtrl.text;
+
+    if (name.isEmpty || email.isEmpty || pass.isEmpty || confirm.isEmpty) {
+      setState(() => _error = 'Please fill in all fields.');
+      return;
+    }
+    if (pass != confirm) {
+      setState(() => _error = 'Passwords do not match.');
+      return;
+    }
+
     setState(() { _loading = true; _error = null; });
-    final error = await context.read<AuthService>().signIn(
-      _emailCtrl.text.trim(),
-      _passCtrl.text,
-    );
+    final error = await context.read<AuthService>().signUp(email, pass, name);
     if (!mounted) return;
     if (error == null) {
       Navigator.of(context).pushReplacementNamed('/home');
@@ -65,9 +80,8 @@ class _LoginScreenState extends State<LoginScreen>
       backgroundColor: aegisCream,
       body: Column(
         children: [
-          // Header area
           Container(
-            height: MediaQuery.of(context).size.height * 0.35,
+            height: MediaQuery.of(context).size.height * 0.28,
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -90,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Welcome back',
+                    'Create your account',
                     style: AppTextStyles.h2.copyWith(color: aegisText),
                   ),
                   const SizedBox(height: 4),
@@ -102,8 +116,6 @@ class _LoginScreenState extends State<LoginScreen>
               ),
             ),
           ),
-
-          // Form card sliding up
           Expanded(
             child: SlideTransition(
               position: _slideAnim,
@@ -118,8 +130,15 @@ class _LoginScreenState extends State<LoginScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Sign in', style: AppTextStyles.h3),
+                      Text('Sign up', style: AppTextStyles.h3),
                       const SizedBox(height: 24),
+                      AegisTextField(
+                        label: 'Full name',
+                        hint: 'Your name',
+                        controller: _nameCtrl,
+                        keyboardType: TextInputType.name,
+                      ),
+                      const SizedBox(height: 16),
                       AegisTextField(
                         label: 'Email',
                         hint: 'parent@example.com',
@@ -129,18 +148,16 @@ class _LoginScreenState extends State<LoginScreen>
                       const SizedBox(height: 16),
                       AegisTextField(
                         label: 'Password',
-                        hint: 'Enter your password',
+                        hint: 'At least 6 characters',
                         controller: _passCtrl,
                         obscure: true,
                       ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          'Forgot password?',
-                          style: AppTextStyles.caption
-                              .copyWith(color: aegisPinkDark),
-                        ),
+                      const SizedBox(height: 16),
+                      AegisTextField(
+                        label: 'Confirm password',
+                        hint: 'Re-enter your password',
+                        controller: _confirmPassCtrl,
+                        obscure: true,
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 12),
@@ -153,8 +170,8 @@ class _LoginScreenState extends State<LoginScreen>
                       ],
                       const SizedBox(height: 24),
                       AegisButton(
-                        label: 'Sign In',
-                        onPressed: _signIn,
+                        label: 'Create Account',
+                        onPressed: _signUp,
                         isLoading: _loading,
                       ),
                       const SizedBox(height: 20),
@@ -162,14 +179,14 @@ class _LoginScreenState extends State<LoginScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'New to AEGIS? ',
+                            'Already have an account? ',
                             style: AppTextStyles.caption,
                           ),
                           GestureDetector(
                             onTap: () => Navigator.of(context)
-                                .pushReplacementNamed('/signup'),
+                                .pushReplacementNamed('/login'),
                             child: Text(
-                              'Create account',
+                              'Sign in',
                               style: AppTextStyles.caption
                                   .copyWith(color: aegisPinkDark),
                             ),

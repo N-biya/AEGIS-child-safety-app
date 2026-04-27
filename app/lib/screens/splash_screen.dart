@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_text_styles.dart';
@@ -30,7 +31,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     Future.delayed(const Duration(milliseconds: 2200), () {
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/login');
+        final user = FirebaseAuth.instance.currentUser;
+        Navigator.of(context).pushReplacementNamed(
+          user != null ? '/home' : '/login',
+        );
       }
     });
   }

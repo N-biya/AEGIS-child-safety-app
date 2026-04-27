@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../screens/splash_screen.dart';
 import '../screens/login_screen.dart';
+import '../screens/signup_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/map_screen.dart';
 import '../screens/alerts_screen.dart';
@@ -17,6 +18,8 @@ class AppRouter {
         return _fade(const SplashScreen());
       case '/login':
         return _fade(const LoginScreen());
+      case '/signup':
+        return _fade(const SignupScreen());
       case '/home':
         return _fade(const HomeShell());
       case '/calibration':
