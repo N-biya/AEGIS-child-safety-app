@@ -1,9 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import '../router/app_router.dart';
 import '../services/dummy_data_service.dart';
 import '../utils/app_colors.dart';
-import '../utils/app_text_styles.dart';
+import '../utils/aegis_text.dart';
+import '../widgets/aurora_bg.dart';
+import '../widgets/glass_card.dart';
+import '../widgets/aegis_animations.dart';
 
 class CalibrationScreen extends StatefulWidget {
   const CalibrationScreen({super.key});
@@ -14,9 +17,8 @@ class CalibrationScreen extends StatefulWidget {
 
 class _CalibrationScreenState extends State<CalibrationScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _ringCtrl;
-  final int _daysComplete = 3;
-  final int _totalDays = 7;
+  static const _day   = 3;
+  static const _total = 7;
 
   String _hr   = '--';
   String _spo2 = '--';
@@ -26,12 +28,6 @@ class _CalibrationScreenState extends State<CalibrationScreen>
   @override
   void initState() {
     super.initState();
-    _ringCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-      value: _daysComplete / _totalDays,
-    );
-
     DummyDataService.vitalStream.listen((v) {
       if (mounted) {
         setState(() {
@@ -45,195 +41,147 @@ class _CalibrationScreenState extends State<CalibrationScreen>
   }
 
   @override
-  void dispose() {
-    _ringCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final child  = DummyDataService.dummyChild;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = AegisT.isDark(context);
+    final T      = AegisT.text(context);
+    final D      = AegisT.textDim(context);
+    final pct    = _day / _total;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [darkPinkPale, darkCard]
-                : [aegisPinkPale, aegisLavenderLight],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 16),
-                Text(
-                  'Getting to know',
-                  style: AppTextStyles.h3.copyWith(color: aegisTextSoft),
-                ),
-                Text(
-                  child.name,
-                  style: AppTextStyles.h2,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-
-                // ── Progress ring ───────────────────────────────────────
-                SizedBox(
-                  width: 200,
-                  height: 200,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CustomPaint(
-                        size: const Size(200, 200),
-                        painter: _RingPainter(
-                          progress: _daysComplete / _totalDays,
-                        ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '$_daysComplete',
-                            style: AppTextStyles.vitalNumber.copyWith(
-                              fontSize: 52,
-                              color: aegisPinkDark,
-                            ),
-                          ),
-                          Text('of $_totalDays days',
-                              style: AppTextStyles.caption),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-                Text(
-                  'Day $_daysComplete of $_totalDays complete',
-                  style: AppTextStyles.h3,
-                ),
-                const SizedBox(height: 24),
-
-                // ── Explanation card ────────────────────────────────────
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AegisColors.card(context),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: aegisPink.withOpacity(0.1),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(LucideIcons.info,
-                              size: 16, color: aegisPinkDark),
-                          const SizedBox(width: 8),
-                          Text('What is happening?',
-                              style: AppTextStyles.bodyMid),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'AEGIS is learning ${child.name.split(' ').first}\'s unique physiological baseline. '
-                        'Every child is different — heart rate, skin response, and temperature vary naturally. '
-                        'Once the 7-day profile is complete, the band will personalise its stress detection '
-                        'specifically to ${child.name.split(' ').first}.',
-                        style: AppTextStyles.body,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // ── Live readings ───────────────────────────────────────
-                Text('Current readings', style: AppTextStyles.label),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _ReadingChip(label: 'HR',   value: _hr,   color: aegisPinkLight),
-                    _ReadingChip(label: 'SpO2', value: _spo2, color: aegisMintLight),
-                    _ReadingChip(label: 'GSR',  value: _gsr,  color: aegisLavenderLight),
-                    _ReadingChip(label: 'Temp', value: _temp, color: aegisPeachLight),
-                  ],
-                ),
-                const SizedBox(height: 32),
-
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? aegisLavender.withOpacity(0.2)
-                        : aegisLavenderLight,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(LucideIcons.clock,
-                          size: 16, color: aegisLavender),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Alerts will activate on Day 8',
-                          style: AppTextStyles.body
-                              .copyWith(color: aegisTextSoft),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ReadingChip extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  const _ReadingChip(
-      {required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      backgroundColor: AegisT.bg(context),
+      body: Stack(
         children: [
-          Text('$label  ',
-              style: AppTextStyles.caption
-                  .copyWith(fontWeight: FontWeight.w700)),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: Text(value,
-                key: ValueKey(value), style: AppTextStyles.caption),
+          const AuroraBg(),
+          SafeArea(
+            bottom: false,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(18, 0, 18, kNavBarHeight + 24),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+
+                  // ── Top row: back btn + status badge ────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: isDark ? const Color(0x0FFFFFFF) : const Color(0xB3FFFFFF),
+                          border: Border.all(color: AegisT.glassBorder(context)),
+                        ),
+                        child: Icon(Icons.chevron_left_rounded, size: 22, color: T),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(999),
+                          color: const Color(0x2EA78BFA),
+                          border: Border.all(color: const Color(0x4DA78BFA)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AegisPulseDot(size: 6, color: kCal),
+                            const SizedBox(width: 5),
+                            Text('ML CALIBRATING',
+                                style: AegisText.label(color: kCal)
+                                    .copyWith(fontWeight: FontWeight.w700, fontSize: 10)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Title ───────────────────────────────────────────────
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Learning Aisha's\nunique patterns",
+                      style: AegisText.h2(color: T)
+                          .copyWith(fontSize: 26, fontWeight: FontWeight.w800, height: 1.1, letterSpacing: 0.2),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'AEGIS is building a personal baseline so detection is accurate just for her.',
+                      style: AegisText.body(color: D).copyWith(fontSize: 13, height: 1.45),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // ── Progress ring ────────────────────────────────────────
+                  SizedBox(
+                    width: 176,
+                    height: 176,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CustomPaint(
+                          size: const Size(176, 176),
+                          painter: _RingPainter(progress: pct, isDark: isDark),
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('DAY',
+                                style: AegisText.label(color: D)
+                                    .copyWith(fontWeight: FontWeight.w600, fontSize: 11)),
+                            Text('$_day',
+                                style: AegisText.numDisplay(color: T)
+                                    .copyWith(fontSize: 56, fontWeight: FontWeight.w800)),
+                            Text('of $_total · ${(pct * 100).round()}%',
+                                style: AegisText.caption(color: D).copyWith(fontSize: 12)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // ── Steps ───────────────────────────────────────────────
+                  Row(children: [
+                    Expanded(child: _CalStep(step: 1, title: 'Baseline', desc: 'Vitals captured', done: true)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _CalStep(step: 2, title: 'Building', desc: 'Pattern model', active: true)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _CalStep(step: 3, title: 'Ready', desc: 'Detection live')),
+                  ]),
+                  const SizedBox(height: 14),
+
+                  // ── Sensor data collection ───────────────────────────────
+                  GlassCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Sensor data collection',
+                            style: AegisText.h5(color: T)
+                                .copyWith(fontSize: 13, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 10),
+                        ...[
+                          _SensorRow(name: 'Heart rate',       pct: 0.62, color: kAlert,    value: _hr),
+                          _SensorRow(name: 'SpO₂',             pct: 0.45, color: const Color(0xFF5EEAD4), value: _spo2),
+                          _SensorRow(name: 'Skin conductance', pct: 0.38, color: kStress,   value: _gsr),
+                          _SensorRow(name: 'Skin temp',        pct: 0.55, color: kAccent,   value: _temp),
+                          _SensorRow(name: 'Movement (IMU)',   pct: 0.71, color: kCal,      value: ''),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Text('Learn more about calibration →',
+                      style: AegisText.label(color: kAccent)
+                          .copyWith(fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -241,39 +189,176 @@ class _ReadingChip extends StatelessWidget {
   }
 }
 
+// ── Step card ──────────────────────────────────────────────────────────────
+class _CalStep extends StatelessWidget {
+  final int step;
+  final String title, desc;
+  final bool done, active;
+
+  const _CalStep({required this.step, required this.title, required this.desc, this.done = false, this.active = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final T    = AegisT.text(context);
+    final D    = AegisT.textDim(context);
+    final isDark = AegisT.isDark(context);
+    final dotColor = done ? kSafe : active ? kAccent
+        : (isDark ? const Color(0x1AFFFFFF) : const Color(0x1A7C3AED));
+
+    return GlassCard(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: dotColor,
+            ),
+            child: Center(
+              child: done
+                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
+                  : Text('$step',
+                      style: AegisText.label(color: Colors.white)
+                          .copyWith(fontSize: 12, fontWeight: FontWeight.w800)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(title, style: AegisText.h5(color: T).copyWith(fontSize: 12, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 2),
+          Text(desc, style: AegisText.micro(color: D).copyWith(fontSize: 10)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sensor data row ────────────────────────────────────────────────────────
+class _SensorRow extends StatelessWidget {
+  final String name, value;
+  final double pct;
+  final Color color;
+
+  const _SensorRow({required this.name, required this.pct, required this.color, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final T    = AegisT.text(context);
+    final D    = AegisT.textDim(context);
+    final isDark = AegisT.isDark(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(name, style: AegisText.body(color: T).copyWith(fontSize: 12))),
+          SizedBox(
+            width: 80,
+            height: 5,
+            child: Stack(children: [
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: isDark ? const Color(0x0FFFFFFF) : const Color(0x147C3AED),
+                ),
+              ),
+              FractionallySizedBox(
+                widthFactor: pct,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    color: color,
+                  ),
+                ),
+              ),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 28,
+            child: Text(
+              '${(pct * 100).round()}%',
+              style: AegisText.micro(color: D)
+                  .copyWith(fontWeight: FontWeight.w700, fontSize: 10),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Progress ring painter ──────────────────────────────────────────────────
 class _RingPainter extends CustomPainter {
   final double progress;
-  _RingPainter({required this.progress});
+  final bool isDark;
+  _RingPainter({required this.progress, required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
     final cx     = size.width / 2;
     final cy     = size.height / 2;
-    final radius = size.width / 2 - 12;
-    const strokeWidth = 12.0;
+    final radius = size.width / 2 - 14;
+    const strokeW = 10.0;
     final rect   = Rect.fromCircle(center: Offset(cx, cy), radius: radius);
 
-    final bgPaint = Paint()
-      ..color       = aegisPinkLight
-      ..style       = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap   = StrokeCap.round;
-    canvas.drawCircle(Offset(cx, cy), radius, bgPaint);
+    // Background arc
+    canvas.drawCircle(
+      Offset(cx, cy),
+      radius,
+      Paint()
+        ..color = isDark ? const Color(0x14FFFFFF) : const Color(0x147C3AED)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeW,
+    );
 
-    final fgPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [aegisPink, aegisPinkDark],
-      ).createShader(rect)
-      ..style       = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap   = StrokeCap.round;
+    // Progress arc
     canvas.drawArc(
       rect,
       -math.pi / 2,
       2 * math.pi * progress,
       false,
-      fgPaint,
+      Paint()
+        ..shader = const LinearGradient(
+          colors: [kAccentLight, kAccent],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(rect)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeW
+        ..strokeCap = StrokeCap.round,
     );
+
+    // Tick marks
+    const n = 7;
+    for (int i = 0; i < n; i++) {
+      final angle = (i / n) * 2 * math.pi - math.pi / 2;
+      final r1 = radius + 14;
+      final r2 = radius + 18;
+      final x1 = cx + r1 * math.cos(angle);
+      final y1 = cy + r1 * math.sin(angle);
+      final x2 = cx + r2 * math.cos(angle);
+      final y2 = cy + r2 * math.sin(angle);
+      final done = i < 3; // _day = 3
+      canvas.drawLine(
+        Offset(x1, y1),
+        Offset(x2, y2),
+        Paint()
+          ..color = done ? kAccent
+              : (isDark ? const Color(0x26FFFFFF) : const Color(0x337C3AED))
+          ..strokeWidth = 2.5
+          ..strokeCap = StrokeCap.round,
+      );
+    }
   }
 
   @override

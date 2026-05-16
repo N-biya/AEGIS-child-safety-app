@@ -8,7 +8,8 @@ AEGIS is a child safety wearable band system built as a startup product. It moni
 
 The name stands for: Adaptive Edge-Intelligence Guardian and Safety System.
 
-The core philosophy is edge computing — all critical decisions happen on the wearable device itself, not in the cloud. The mobile app is only for visualization and configuration. The backend is only for storage and sync.
+The core philosophy is edge computing — all critical decisions happen on the wearable device itself, not in the cloud. The mobile app is only for visualization and configuration. The backend is only for stor
+age and sync.
 
 ---
 
