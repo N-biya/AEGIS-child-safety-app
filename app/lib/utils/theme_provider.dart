@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeNotifier extends ChangeNotifier {
   static const _key = 'aegis_dark_mode';
-  bool _isDark = false;
+  bool _isDark = true; // Default to dark (Velvet Night)
 
   bool get isDarkMode => _isDark;
   ThemeMode get themeMode => _isDark ? ThemeMode.dark : ThemeMode.light;
@@ -14,12 +14,20 @@ class ThemeNotifier extends ChangeNotifier {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    _isDark = prefs.getBool(_key) ?? false;
+    // Default true (dark) — only override if explicitly saved as false
+    _isDark = prefs.getBool(_key) ?? true;
     notifyListeners();
   }
 
   Future<void> toggle() async {
     _isDark = !_isDark;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool(_key, _isDark);
+  }
+
+  Future<void> setDark(bool value) async {
+    _isDark = value;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     prefs.setBool(_key, _isDark);

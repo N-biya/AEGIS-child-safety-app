@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'router/app_router.dart';
@@ -10,6 +10,10 @@ import 'utils/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const AegisApp());
 }
@@ -29,12 +33,8 @@ class AegisApp extends StatelessWidget {
           title: 'AEGIS',
           debugShowCheckedModeBanner: false,
           themeMode: notifier.themeMode,
-          theme: aegisTheme.copyWith(
-            textTheme: GoogleFonts.nunitoTextTheme(aegisTheme.textTheme),
-          ),
-          darkTheme: aegisDarkTheme.copyWith(
-            textTheme: GoogleFonts.nunitoTextTheme(aegisDarkTheme.textTheme),
-          ),
+          theme: aegisLightTheme,
+          darkTheme: aegisDarkTheme,
           initialRoute: '/',
           onGenerateRoute: AppRouter.generateRoute,
         ),

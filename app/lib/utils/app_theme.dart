@@ -1,119 +1,104 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
-import 'app_text_styles.dart';
-
-ThemeData get aegisTheme => ThemeData(
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: aegisCream,
-      fontFamily: 'Nunito',
-      colorScheme: const ColorScheme.light(
-        primary: aegisPink,
-        secondary: aegisLavender,
-        surface: aegisCard,
-        onSurface: aegisText,
-        error: aegisRose,
-      ),
-      cardTheme: CardThemeData(
-        color: aegisCard,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        titleTextStyle: AppTextStyles.h3,
-        iconTheme: IconThemeData(color: aegisText),
-      ),
-      dividerTheme: const DividerThemeData(
-        color: aegisWarm,
-        thickness: 0.8,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: aegisPinkLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: aegisPink, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: aegisPink, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: aegisPinkDark, width: 1.5),
-        ),
-        labelStyle: AppTextStyles.label,
-        hintStyle: AppTextStyles.caption,
-      ),
-      switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return aegisPinkDark;
-          return aegisTextSoft;
-        }),
-        trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return aegisPink;
-          return aegisWarm;
-        }),
-      ),
-    );
 
 ThemeData get aegisDarkTheme => ThemeData(
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: darkBg,
-      fontFamily: 'Nunito',
+      scaffoldBackgroundColor: kDarkBg,
       colorScheme: const ColorScheme.dark(
-        primary: aegisPink,
-        secondary: aegisLavender,
-        surface: darkCard,
-        onSurface: darkText,
-        error: aegisRose,
+        primary: kAccent,
+        secondary: kAccentLight,
+        surface: kDarkCard,
+        onSurface: kDarkText,
+        error: kAlert,
       ),
       cardTheme: CardThemeData(
-        color: darkCard,
+        color: kDarkCard,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        titleTextStyle: AppTextStyles.h3,
-        iconTheme: IconThemeData(color: darkText),
+        iconTheme: IconThemeData(color: kDarkText),
       ),
       dividerTheme: const DividerThemeData(
-        color: darkWarm,
+        color: Color(0xFF3D2460),
         thickness: 0.8,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: darkPinkLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: aegisPink, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: aegisPink, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: aegisPinkDark, width: 1.5),
-        ),
-        labelStyle: AppTextStyles.label,
-        hintStyle: AppTextStyles.caption,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return aegisPinkDark;
-          return darkTextSoft;
+          if (states.contains(WidgetState.selected)) return kAccent;
+          return kDarkTextDim;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return aegisPink;
-          return darkWarm;
+          if (states.contains(WidgetState.selected)) return kAccentLight;
+          return kDarkCard;
         }),
       ),
+      textTheme: GoogleFonts.dmSansTextTheme().copyWith(
+        displayLarge:  GoogleFonts.nunito(fontSize: 32, fontWeight: FontWeight.w800, color: kDarkText),
+        displayMedium: GoogleFonts.nunito(fontSize: 28, fontWeight: FontWeight.w800, color: kDarkText),
+        displaySmall:  GoogleFonts.nunito(fontSize: 24, fontWeight: FontWeight.w700, color: kDarkText),
+        headlineMedium: GoogleFonts.nunito(fontSize: 22, fontWeight: FontWeight.w700, color: kDarkText),
+        headlineSmall:  GoogleFonts.nunito(fontSize: 19, fontWeight: FontWeight.w800, color: kDarkText),
+        titleLarge:    GoogleFonts.nunito(fontSize: 18, fontWeight: FontWeight.w700, color: kDarkText),
+        bodyLarge:     GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w400, color: kDarkText),
+        bodyMedium:    GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w400, color: kDarkText),
+        bodySmall:     GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w400, color: kDarkTextDim),
+        labelLarge:    GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: kDarkTextDim),
+        labelSmall:    GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.w700, color: kDarkTextDim),
+      ),
     );
+
+ThemeData get aegisLightTheme => ThemeData(
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: kLightBg,
+      colorScheme: const ColorScheme.light(
+        primary: kAccent,
+        secondary: kAccentLight,
+        surface: kLightCard,
+        onSurface: kLightText,
+        error: kAlert,
+      ),
+      cardTheme: CardThemeData(
+        color: kLightCard,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: kLightText),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFFEDE0FF),
+        thickness: 0.8,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return kAccent;
+          return kLightTextDim;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return kAccentLight;
+          return kLightNav;
+        }),
+      ),
+      textTheme: GoogleFonts.dmSansTextTheme().copyWith(
+        displayLarge:  GoogleFonts.nunito(fontSize: 32, fontWeight: FontWeight.w800, color: kLightText),
+        displayMedium: GoogleFonts.nunito(fontSize: 28, fontWeight: FontWeight.w800, color: kLightText),
+        displaySmall:  GoogleFonts.nunito(fontSize: 24, fontWeight: FontWeight.w700, color: kLightText),
+        headlineMedium: GoogleFonts.nunito(fontSize: 22, fontWeight: FontWeight.w700, color: kLightText),
+        headlineSmall:  GoogleFonts.nunito(fontSize: 19, fontWeight: FontWeight.w800, color: kLightText),
+        titleLarge:    GoogleFonts.nunito(fontSize: 18, fontWeight: FontWeight.w700, color: kLightText),
+        bodyLarge:     GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w400, color: kLightText),
+        bodyMedium:    GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w400, color: kLightText),
+        bodySmall:     GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w400, color: kLightTextDim),
+        labelLarge:    GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: kLightTextDim),
+        labelSmall:    GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.w700, color: kLightTextDim),
+      ),
+    );
+
+// Legacy aliases kept for widgets not yet rewritten
+ThemeData get aegisTheme     => aegisLightTheme;
