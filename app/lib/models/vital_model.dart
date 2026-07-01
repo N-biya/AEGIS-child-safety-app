@@ -30,7 +30,7 @@ class VitalModel {
         status:      map['status'] as String,
         latitude:    (map['lat'] as num).toDouble(),
         longitude:   (map['lng'] as num).toDouble(),
-        timestamp:   DateTime.parse(map['timestamp'] as String),
+        timestamp:   DateTime.parse(map['timestamp'] as String).toLocal(),
       );
 
   Map<String, dynamic> toMap() => {

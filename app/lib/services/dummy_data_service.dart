@@ -170,7 +170,10 @@ class DummyDataService {
           lng: 74.3587,
           radiusMeters: 300,
         ),
-        emergencyContacts: ['+923001234567', '+923009876543'],
+        emergencyContacts: [
+          EmergencyContactModel(id: 'c1', name: 'Ayesha Ahmed', relation: 'Mother', phone: '+923001234567', priority: 1),
+          EmergencyContactModel(id: 'c2', name: 'Bilal Ahmed', relation: 'Father', phone: '+923009876543', priority: 2),
+        ],
         calibrated: true,
         daysCollected: 7,
       );

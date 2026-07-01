@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1110" height="624.0" viewBox="0 0 1110 624.0" font-family="Segoe UI, Verdana, sans-serif">
+  <rect x="0" y="0" width="1110" height="624.0" fill="#FBF6FC"/>
+  <rect x="20" y="20" width="1070" height="584.0" rx="20" fill="none" stroke="#C9A6DE" stroke-width="2"/>
+  
+  <defs>
+    <marker id="seqArrowFilled" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L9,5 L0,10 Z" fill="#A88FC2"/>
+    </marker>
+    <marker id="seqArrowOpen" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto">
+      <path d="M1,1 L9,5 L1,9" fill="none" stroke="#9579A6" stroke-width="1.4"/>
+    </marker>
+    <marker id="seqArrowSelf" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L9,5 L0,10 Z" fill="#C2569B"/>
+    </marker>
+  </defs>
+  <text x="555.0" y="42" text-anchor="middle" font-size="24" font-weight="700" fill="#6A3D8C">AEGIS — Sequence Diagram: GSM Module</text>
+  <text x="555.0" y="63" text-anchor="middle" font-size="13.5" font-style="italic" fill="#9579A6">Send SMS Alert use case</text>
+  <rect x="105.0" y="150" width="190" height="60" rx="8" fill="#FBE3F1" stroke="#D98CC4" stroke-width="1.8"/><text x="200" y="176" text-anchor="middle" font-size="13" font-weight="700" fill="#7A3D63">ESP32 Wearable</text><text x="200" y="193" text-anchor="middle" font-size="10.5" fill="#7A3D63" opacity="0.75">(Edge Device)</text><rect x="355.0" y="150" width="190" height="60" rx="8" fill="#FBE3F1" stroke="#D98CC4" stroke-width="1.8"/><text x="450" y="176" text-anchor="middle" font-size="13" font-weight="700" fill="#7A3D63">GSM Module</text><text x="450" y="193" text-anchor="middle" font-size="10.5" fill="#7A3D63" opacity="0.75">(SIM800L)</text>
+  <g stroke="#6A3D8C" stroke-width="2.6" fill="none" stroke-linecap="round">
+    <circle cx="700" cy="118" r="14" fill="#FBE3F1" stroke="#6A3D8C"/>
+    <line x1="700" y1="132" x2="700" y2="168"/>
+    <line x1="683" y1="148" x2="717" y2="148"/>
+    <line x1="700" y1="168" x2="685" y2="200"/>
+    <line x1="700" y1="168" x2="715" y2="200"/>
+  </g>
+  <text x="700" y="216" text-anchor="middle" font-size="13" font-weight="700" fill="#6A3D8C">Parent / Guardian</text><text x="700" y="231" text-anchor="middle" font-size="10" fill="#9579A6">(Human Actor — SMS recipient)</text><line x1="200" y1="235" x2="200" y2="574.0" stroke="#C9A6DE" stroke-width="1.4" stroke-dasharray="5,4"/><line x1="450" y1="235" x2="450" y2="574.0" stroke="#C9A6DE" stroke-width="1.4" stroke-dasharray="5,4"/><line x1="700" y1="235" x2="700" y2="574.0" stroke="#C9A6DE" stroke-width="1.4" stroke-dasharray="5,4"/><path d="M60,271 L281.6,271 L281.6,293 L269.6,301 L60,301 Z" fill="#F6ECFA" stroke="#C9A6DE" stroke-width="1.4"/><text x="72" y="290" font-size="12.5" font-weight="700" fill="#6A3D8C">Use Case 1: Send SMS Alert</text><line x1="60" y1="301" x2="1050" y2="301" stroke="#D9BDEB" stroke-width="1.2" stroke-dasharray="3,4"/><text x="555.0" y="354.0" text-anchor="middle" font-size="11" font-style="italic" fill="#9579A6">[extend: triggered by Classify Stress (STRESS) or Detect Geofence Breach]</text><line x1="200" y1="404.0" x2="450" y2="404.0" stroke="#A88FC2" stroke-width="1.5" marker-end="url(#seqArrowFilled)"/><rect x="199.95" y="384.0" width="250.1" height="15" fill="#FBF6FC"/><text x="325.0" y="395.0" text-anchor="middle" font-size="11.5" fill="#4A3B52">AT+CMGS — send SMS(alert text + GPS link)</text><path d="M450,444.0 L508,444.0 L508,464.0 L450,464.0" fill="none" stroke="#C2569B" stroke-width="1.4" marker-end="url(#seqArrowSelf)"/><rect x="514" y="445.0" width="189.8" height="15" fill="#FBF6FC"/><text x="518" y="456.0" font-size="11.5" fill="#C2569B">establish GSM network session</text><line x1="450" y1="504.0" x2="700" y2="504.0" stroke="#A88FC2" stroke-width="1.5" marker-end="url(#seqArrowFilled)"/><rect x="492.65" y="484.0" width="164.7" height="15" fill="#FBF6FC"/><text x="575.0" y="495.0" text-anchor="middle" font-size="11.5" fill="#4A3B52">deliver SMS via GSM network</text><line x1="450" y1="554.0" x2="200" y2="554.0" stroke="#9579A6" stroke-width="1.3" stroke-dasharray="6,4" marker-end="url(#seqArrowOpen)"/><rect x="254.85000000000002" y="534.0" width="140.29999999999998" height="15" fill="#FBF6FC"/><text x="325.0" y="545.0" text-anchor="middle" font-style="italic" font-size="11.5" fill="#9579A6">send status: OK / ERROR</text>
+  
+  <g>
+    <rect x="860" y="474.0" width="220" height="120" rx="10" fill="#FFFFFF" stroke="#C9A6DE" stroke-width="1.5"/>
+    <text x="878" y="496.0" font-size="12.5" font-weight="700" fill="#6A3D8C">Legend</text>
+    <line x1="878" y1="516.0" x2="912" y2="516.0" stroke="#A88FC2" stroke-width="1.5" marker-end="url(#seqArrowFilled)"/>
+    <text x="922" y="520.0" font-size="10.8" fill="#4A3B52">Synchronous call</text>
+    <line x1="878" y1="538.0" x2="912" y2="538.0" stroke="#9579A6" stroke-width="1.3" stroke-dasharray="6,4" marker-end="url(#seqArrowOpen)"/>
+    <text x="922" y="542.0" font-size="10.8" fill="#4A3B52">Return message</text>
+    <path d="M878,556.0 L900,556.0 L900,566.0 L878,566.0" fill="none" stroke="#C2569B" stroke-width="1.4" marker-end="url(#seqArrowSelf)"/>
+    <text x="922" y="564.0" font-size="10.8" fill="#4A3B52">Internal processing</text>
+    <line x1="878" y1="578.0" x2="912" y2="578.0" stroke="#C9A6DE" stroke-width="1.4" stroke-dasharray="5,4"/>
+    <text x="922" y="582.0" font-size="10.8" fill="#4A3B52">Lifeline</text>
+  </g>
+</svg>

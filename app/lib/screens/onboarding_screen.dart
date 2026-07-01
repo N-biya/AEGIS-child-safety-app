@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+import '../models/child_model.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 import '../services/prefs_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/aegis_text.dart';
@@ -60,6 +65,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final _parentNameCtrl = TextEditingController();
   final _childNameCtrl  = TextEditingController();
   final _childAgeCtrl   = TextEditingController();
+  String _parentRelation = '';
 
   final _parentNameFocus = FocusNode();
   final _childNameFocus  = FocusNode();
@@ -106,6 +112,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       setState(() => _error = 'Please enter your name.');
       return;
     }
+    if (_parentRelation.isEmpty) {
+      setState(() => _error = 'Please select how you\'re related to your child.');
+      return;
+    }
     setState(() { _error = null; _step = 1; });
     _animCtrl.reset();
     _animCtrl.forward();
@@ -124,13 +134,31 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       return;
     }
     setState(() { _loading = true; _error = null; });
-    await PrefsService.completeOnboarding(
-      parentNameVal: _parentNameCtrl.text.trim(),
-      childNameVal:  childName,
-      childAgeVal:   childAge,
+
+    final uid = context.read<AuthService>().userId;
+    final child = ChildModel(
+      id:                const Uuid().v4(),
+      name:              childName,
+      age:               childAge,
+      deviceId:          '',
+      emergencyContacts: const [],
+      calibrated:        false,
+      daysCollected:     0,
     );
-    if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/home');
+
+    try {
+      await FirestoreService().createChild(uid, child);
+      await PrefsService.completeOnboarding(
+        parentNameVal:     _parentNameCtrl.text.trim(),
+        parentRelationVal: _parentRelation,
+        childNameVal:      childName,
+        childAgeVal:       childAge,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed('/home');
+    } catch (e) {
+      setState(() { _loading = false; _error = 'Could not save your profile. Please try again.'; });
+    }
   }
 
   @override
@@ -178,6 +206,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 ctrl:      _parentNameCtrl,
                                 focus:     _parentNameFocus,
                                 isFocused: _parentNameFocus.hasFocus,
+                                relation:  _parentRelation,
+                                onRelationChanged: (r) =>
+                                    setState(() => _parentRelation = r),
                                 error:     _error,
                                 onNext:    _goToStep2,
                               )
@@ -281,14 +312,20 @@ class _StepOneBody extends StatelessWidget {
   final TextEditingController ctrl;
   final FocusNode focus;
   final bool isFocused;
+  final String relation;
+  final ValueChanged<String> onRelationChanged;
   final String? error;
   final VoidCallback onNext;
+
+  static const _relations = ['Mother', 'Father', 'Guardian'];
 
   const _StepOneBody({
     required this.dimColor,
     required this.ctrl,
     required this.focus,
     required this.isFocused,
+    required this.relation,
+    required this.onRelationChanged,
     required this.error,
     required this.onNext,
   });
@@ -319,6 +356,34 @@ class _StepOneBody extends StatelessWidget {
           iconSvg:      _personSvg(isFocused ? kAccent : dimColor),
           keyboardType: TextInputType.name,
           hintText:     'e.g. Sarah',
+        ),
+        const SizedBox(height: 14),
+        const AegisFieldLabel('YOUR RELATION TO YOUR CHILD'),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _relations.map((r) {
+            final selected = relation == r;
+            return GestureDetector(
+              onTap: () => onRelationChanged(r),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: selected
+                      ? kAccent
+                      : (AegisT.isDark(context)
+                          ? const Color(0x0FFFFFFF)
+                          : const Color(0x0A7C3AED)),
+                ),
+                child: Text(r,
+                    style: AegisText.label(color: selected ? Colors.white : dimColor)
+                        .copyWith(fontSize: 13, fontWeight: FontWeight.w600)),
+              ),
+            );
+          }).toList(),
         ),
         if (error != null) ...[
           const SizedBox(height: 10),

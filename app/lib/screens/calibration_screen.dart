@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../router/app_router.dart';
-import '../services/dummy_data_service.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/aegis_text.dart';
 import '../widgets/aurora_bg.dart';
@@ -25,19 +28,34 @@ class _CalibrationScreenState extends State<CalibrationScreen>
   String _gsr  = '--';
   String _temp = '--';
 
+  final _firestore = FirestoreService();
+  StreamSubscription? _childSub;
+  StreamSubscription? _vitalSub;
+
   @override
   void initState() {
     super.initState();
-    DummyDataService.vitalStream.listen((v) {
-      if (mounted) {
+    final uid = context.read<AuthService>().userId;
+    _childSub = _firestore.watchChildForUser(uid).listen((child) {
+      _vitalSub?.cancel();
+      if (child == null) return;
+      _vitalSub = _firestore.latestVitalStream(child.id).listen((v) {
+        if (v == null || !mounted) return;
         setState(() {
           _hr   = '${v.heartRate} bpm';
           _spo2 = '${v.spo2}%';
           _gsr  = '${v.gsr.toStringAsFixed(2)} µS';
           _temp = '${v.temperature.toStringAsFixed(1)}°C';
         });
-      }
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _childSub?.cancel();
+    _vitalSub?.cancel();
+    super.dispose();
   }
 
   @override

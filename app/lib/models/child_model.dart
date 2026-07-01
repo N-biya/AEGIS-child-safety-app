@@ -22,13 +22,60 @@ class GeofenceModel {
       };
 }
 
+class EmergencyContactModel {
+  final String id;
+  final String name;
+  final String relation;
+  final String phone;
+  final int priority; // 1 = contacted first
+
+  const EmergencyContactModel({
+    required this.id,
+    required this.name,
+    required this.relation,
+    required this.phone,
+    required this.priority,
+  });
+
+  factory EmergencyContactModel.fromMap(Map<String, dynamic> map) =>
+      EmergencyContactModel(
+        id:       map['id'] as String,
+        name:     map['name'] as String,
+        relation: map['relation'] as String? ?? '',
+        phone:    map['phone'] as String? ?? '',
+        priority: (map['priority'] as num?)?.toInt() ?? 1,
+      );
+
+  Map<String, dynamic> toMap() => {
+        'id':       id,
+        'name':     name,
+        'relation': relation,
+        'phone':    phone,
+        'priority': priority,
+      };
+
+  EmergencyContactModel copyWith({
+    String? name,
+    String? relation,
+    String? phone,
+    int? priority,
+  }) => EmergencyContactModel(
+        id:       id,
+        name:     name     ?? this.name,
+        relation: relation ?? this.relation,
+        phone:    phone    ?? this.phone,
+        priority: priority ?? this.priority,
+      );
+}
+
 class ChildModel {
   final String id;
   final String name;
   final int age;
   final String deviceId;
+  final String photoUrl;
   final GeofenceModel? geofence;
-  final List<String> emergencyContacts;
+  final List<EmergencyContactModel> emergencyContacts;
   final bool calibrated;
   final int daysCollected;
 
@@ -37,6 +84,7 @@ class ChildModel {
     required this.name,
     required this.age,
     required this.deviceId,
+    this.photoUrl = '',
     this.geofence,
     required this.emergencyContacts,
     required this.calibrated,
@@ -48,17 +96,35 @@ class ChildModel {
         name:              map['name'] as String,
         age:               (map['age'] as num).toInt(),
         deviceId:          map['deviceId'] as String? ?? '',
+        photoUrl:          map['photoUrl'] as String? ?? '',
         geofence:          map['geofence'] != null
             ? GeofenceModel.fromMap(map['geofence'] as Map<String, dynamic>)
             : null,
-        emergencyContacts: List<String>.from(map['emergencyContacts'] ?? []),
+        emergencyContacts: (map['emergencyContacts'] as List<dynamic>? ?? [])
+            .map((e) => EmergencyContactModel.fromMap(e as Map<String, dynamic>))
+            .toList(),
         calibrated:        map['calibrated'] as bool? ?? false,
         daysCollected:     (map['daysCollected'] as num?)?.toInt() ?? 0,
       );
+
+  Map<String, dynamic> toMap() => {
+        'name':              name,
+        'age':               age,
+        'deviceId':          deviceId,
+        'photoUrl':          photoUrl,
+        'geofence':          geofence?.toMap(),
+        'emergencyContacts': emergencyContacts.map((c) => c.toMap()).toList(),
+        'calibrated':        calibrated,
+        'daysCollected':     daysCollected,
+      };
 
   String get initials {
     final parts = name.trim().split(' ');
     if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     return name.isNotEmpty ? name[0].toUpperCase() : 'C';
   }
+
+  /// Contacts ordered by priority (1 = highest, contacted first).
+  List<EmergencyContactModel> get contactsByPriority =>
+      [...emergencyContacts]..sort((a, b) => a.priority.compareTo(b.priority));
 }

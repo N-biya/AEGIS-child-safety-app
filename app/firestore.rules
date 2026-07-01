@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // For the children/{childId} document itself, use resource.data directly
+    // (the document already being evaluated) instead of a self-referential
+    // get() — get()-based rules on the same path break the arrayContains
+    // list query used to find a parent's child (cloud_firestore/permission-denied).
+    function isLinkedParentOfChild() {
+      return request.auth != null &&
+        request.auth.uid in resource.data.linkedParents;
+    }
+
+    // Device reading its own child doc (e.g. to pull the parent-set safe zone).
+    // Uses resource.data directly — safe for both get() and list queries.
+    function isLinkedDeviceOfChild() {
+      return request.auth != null &&
+        ('linkedDevices' in resource.data) &&
+        request.auth.uid in resource.data.linkedDevices;
+    }
+
+    // For subcollections, the parent doc isn't the resource being evaluated,
+    // so a get() on the parent child doc is required and safe here.
+    function isLinkedParentOf(childId) {
+      return request.auth != null &&
+        request.auth.uid in get(/databases/$(database)/documents/children/$(childId)).data.linkedParents;
+    }
+
+    // The ESP32 wristband authenticates as its own device account (not a
+    // parent), so it must be listed in the child's linkedDevices array to
+    // write vitals/alerts. Devices can only write, never read child data.
+    function isLinkedDeviceOf(childId) {
+      let child = get(/databases/$(database)/documents/children/$(childId)).data;
+      return request.auth != null &&
+        ('linkedDevices' in child) &&
+        request.auth.uid in child.linkedDevices;
+    }
+
+    match /children/{childId} {
+      allow read: if isLinkedParentOfChild() || isLinkedDeviceOfChild();
+      allow create: if request.auth != null &&
+        request.auth.uid in request.resource.data.linkedParents;
+      allow update, delete: if isLinkedParentOfChild();
+
+      match /vitals/{vitalId} {
+        allow read: if isLinkedParentOf(childId);
+        allow write: if isLinkedParentOf(childId) || isLinkedDeviceOf(childId);
+      }
+
+      match /alerts/{alertId} {
+        allow read: if isLinkedParentOf(childId);
+        allow write: if isLinkedParentOf(childId) || isLinkedDeviceOf(childId);
+      }
+
+      match /geofences/{geofenceId} {
+        allow read: if isLinkedParentOf(childId);
+        allow write: if isLinkedParentOf(childId);
+      }
+    }
+  }
+}
