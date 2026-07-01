@@ -2,7 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 class AuthService extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  /// [auth] is injectable so tests can supply a mock; production uses the
+  /// default [FirebaseAuth.instance].
+  AuthService({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
+
+  final FirebaseAuth _auth;
 
   User? get currentUser => _auth.currentUser;
   bool get isLoggedIn => _auth.currentUser != null;

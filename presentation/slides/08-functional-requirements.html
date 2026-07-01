@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../design-system.css">
+</head>
+<body>
+<div class="slide">
+  <!-- signature rings broadcasting from the panel edge (biased lower-right) -->
+  <svg class="ring-field" viewBox="0 0 1920 1080" fill="none">
+    <defs>
+      <radialGradient id="glow" cx="32%" cy="62%" r="55%">
+        <stop offset="0%" stop-color="#AD90DF" stop-opacity="0.10"/>
+        <stop offset="100%" stop-color="#AD90DF" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="1920" height="1080" fill="url(#glow)"/>
+    <circle cx="620" cy="760" r="190" stroke="#AD90DF" stroke-opacity="0.24" stroke-width="2"/>
+    <circle cx="620" cy="760" r="340" stroke="#AD90DF" stroke-opacity="0.16" stroke-width="2"/>
+    <circle cx="620" cy="760" r="500" stroke="#AD90DF" stroke-opacity="0.10" stroke-width="2"/>
+    <circle cx="620" cy="760" r="680" stroke="#AD90DF" stroke-opacity="0.06" stroke-width="2"/>
+    <circle cx="620" cy="760" r="870" stroke="#AD90DF" stroke-opacity="0.035" stroke-width="2"/>
+    <ellipse cx="620" cy="760" rx="600" ry="240" stroke="#7C3AED" stroke-opacity="0.10"
+      stroke-width="2" transform="rotate(-20 620 760)"/>
+    <circle cx="1180" cy="900" r="9" fill="#AD90DF" fill-opacity="0.55"/>
+    <circle cx="1560" cy="980" r="9" fill="#7C3AED" fill-opacity="0.40"/>
+  </svg>
+
+  <!-- left title panel -->
+  <div class="panel">
+    <svg class="orbit" viewBox="0 0 80 80" fill="none">
+      <ellipse cx="40" cy="40" rx="36" ry="15" stroke="#7C3AED" stroke-opacity="0.55" stroke-width="2.5" transform="rotate(-30 40 40)"/>
+      <ellipse cx="40" cy="40" rx="36" ry="15" stroke="#AD90DF" stroke-opacity="0.55" stroke-width="2.5" transform="rotate(30 40 40)"/>
+      <circle cx="40" cy="40" r="8.5" fill="#7C3AED"/>
+    </svg>
+    <div class="ghost">08</div>
+    <div class="eyebrow">Requirements</div>
+    <h1>Functional <span>Requirements</span></h1>
+    <div class="lead">The capabilities the AEGIS parent app delivers across the safety system.</div>
+    <div class="tag">Section 08</div>
+  </div>
+
+  <!-- right list -->
+  <div class="content">
+    <div class="fr-list">
+      <div class="fr-row"><div class="n">01</div><div><div class="t">Accounts &amp; Authentication</div><div class="d">Firebase Auth login; one account, multiple children.</div></div></div>
+      <div class="fr-row"><div class="n">02</div><div><div class="t">Live Vitals Dashboard</div><div class="d">Real-time HR, SpO2, GSR and temperature with a status badge.</div></div></div>
+      <div class="fr-row"><div class="n">03</div><div><div class="t">Location &amp; Geofence Map</div><div class="d">Live GPS and safe-zone on an OpenStreetMap view.</div></div></div>
+      <div class="fr-row"><div class="n">04</div><div><div class="t">Safe-Zone Configuration</div><div class="d">Set the geofence centre and radius from the map.</div></div></div>
+      <div class="fr-row"><div class="n">05</div><div><div class="t">Alert History</div><div class="d">Every stress, breach and SpO2 alert with full context.</div></div></div>
+      <div class="fr-row"><div class="n">06</div><div><div class="t">Push Notifications</div><div class="d">Instant alerts via Firebase Cloud Messaging.</div></div></div>
+      <div class="fr-row"><div class="n">07</div><div><div class="t">Health Analytics</div><div class="d">7-day HR, GSR and SpO2 trends and stress charts.</div></div></div>
+      <div class="fr-row"><div class="n">08</div><div><div class="t">Calibration Tracking</div><div class="d">7-day baseline progress before alerts activate.</div></div></div>
+    </div>
+    <div class="foot">
+      <div>Adaptive Edge-Intelligence Guardian and Safety System</div>
+      <div class="pg">08</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

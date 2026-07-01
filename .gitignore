@@ -34,6 +34,8 @@ app/lib/firebase_options.dart
 .firebaserc
 firebase.json
 serviceAccountKey.json
+*firebase-adminsdk*.json
+firebase_dump.json
 *.jks
 *.keystore
 

@@ -4,18 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// notification_settings_screen) can reference them for targeted saves.
 class PrefsService {
   // ── Onboarding ────────────────────────────────────────────────────────────
-  static const String onboardingDone = 'onboarding_done';
-  static const String parentName     = 'parent_name';
-  static const String childName      = 'child_name';
-  static const String childAge       = 'child_age';
+  static const String onboardingDone  = 'onboarding_done';
+  static const String parentName      = 'parent_name';
+  static const String parentRelation  = 'parent_relation';
+  static const String childName       = 'child_name';
+  static const String childAge        = 'child_age';
 
   // ── Extended profile ──────────────────────────────────────────────────────
-  static const String profileEmail   = 'profile_email';
-  static const String profilePhone   = 'profile_phone';
-  static const String profileAddress = 'profile_address';
-  static const String profileCity    = 'profile_city';
-  static const String emergencyName  = 'emergency_name';
-  static const String emergencyPhone = 'emergency_phone';
   static const String profilePhoto   = 'profile_photo';
 
   // ── Notification prefs ────────────────────────────────────────────────────
@@ -28,6 +23,9 @@ class PrefsService {
   static const String quietHours     = 'notif_quiet_hours';
   static const String quietStart     = 'notif_quiet_start';
   static const String quietEnd       = 'notif_quiet_end';
+  static const String pushMaster     = 'notif_push_master';
+  static const String smsMaster      = 'notif_sms_master';
+  static const String stressSensitivity = 'stress_sensitivity';
 
   // ── Onboarding ────────────────────────────────────────────────────────────
   static Future<bool> isOnboardingDone() async {
@@ -37,11 +35,13 @@ class PrefsService {
 
   static Future<void> completeOnboarding({
     required String parentNameVal,
+    required String parentRelationVal,
     required String childNameVal,
     required int childAgeVal,
   }) async {
     final p = await SharedPreferences.getInstance();
     await p.setString(parentName, parentNameVal);
+    await p.setString(parentRelation, parentRelationVal);
     await p.setString(childName, childNameVal);
     await p.setInt(childAge, childAgeVal);
     await p.setBool(onboardingDone, true);
@@ -51,6 +51,11 @@ class PrefsService {
   static Future<String> getParentName() async {
     final p = await SharedPreferences.getInstance();
     return p.getString(parentName) ?? 'Parent';
+  }
+
+  static Future<String> getParentRelation() async {
+    final p = await SharedPreferences.getInstance();
+    return p.getString(parentRelation) ?? '';
   }
 
   static Future<String> getChildName() async {
@@ -67,34 +72,26 @@ class PrefsService {
   static Future<Map<String, String>> getProfile() async {
     final p = await SharedPreferences.getInstance();
     return {
-      'name':          p.getString(parentName)     ?? '',
-      'email':         p.getString(profileEmail)   ?? '',
-      'phone':         p.getString(profilePhone)   ?? '',
-      'address':       p.getString(profileAddress) ?? '',
-      'city':          p.getString(profileCity)    ?? '',
-      'emergencyName': p.getString(emergencyName)  ?? '',
-      'emergencyPhone':p.getString(emergencyPhone) ?? '',
-      'photo':         p.getString(profilePhoto)   ?? '',
+      'name':     p.getString(parentName)     ?? '',
+      'relation': p.getString(parentRelation) ?? '',
+      'photo':    p.getString(profilePhoto)   ?? '',
     };
   }
 
   static Future<void> saveProfile({
     required String name,
-    required String email,
-    required String phone,
-    required String address,
-    required String city,
-    required String emergencyContactName,
-    required String emergencyContactPhone,
+    required String relation,
   }) async {
     final p = await SharedPreferences.getInstance();
-    await p.setString(parentName,      name);
-    await p.setString(profileEmail,    email);
-    await p.setString(profilePhone,    phone);
-    await p.setString(profileAddress,  address);
-    await p.setString(profileCity,     city);
-    await p.setString(emergencyName,   emergencyContactName);
-    await p.setString(emergencyPhone,  emergencyContactPhone);
+    await p.setString(parentName,     name);
+    await p.setString(parentRelation, relation);
+  }
+
+  /// Persists just the parent's name (used at sign-up and as a one-time
+  /// backfill from the Firebase display name) without touching other fields.
+  static Future<void> setParentName(String name) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setString(parentName, name);
   }
 
   static Future<void> saveProfilePhoto(String path) async {
@@ -126,5 +123,26 @@ class PrefsService {
   static Future<void> setNotifString(String key, String value) async {
     final p = await SharedPreferences.getInstance();
     await p.setString(key, value);
+  }
+
+  // ── Quick-toggle prefs (Settings screen) ──────────────────────────────────
+  static Future<bool> getBool(String key, {bool fallback = true}) async {
+    final p = await SharedPreferences.getInstance();
+    return p.getBool(key) ?? fallback;
+  }
+
+  static Future<void> setBool(String key, bool value) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setBool(key, value);
+  }
+
+  static Future<double> getDouble(String key, {double fallback = 0.5}) async {
+    final p = await SharedPreferences.getInstance();
+    return p.getDouble(key) ?? fallback;
+  }
+
+  static Future<void> setDouble(String key, double value) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setDouble(key, value);
   }
 }

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../design-system.css">
+<style>
+  .ring-field { z-index:0; }
+
+  /* IST logo chip, top centre */
+  .ist { position:absolute; top:56px; left:50%; transform:translateX(-50%); z-index:3;
+    background:#fff; border:1px solid var(--surface-line); border-radius:18px;
+    padding:14px 30px; box-shadow:var(--shadow-soft); }
+  .ist img { height:58px; display:block; }
+
+  /* centre hero */
+  .hero { position:absolute; left:0; right:0; top:50%; transform:translateY(-52%);
+    z-index:2; display:flex; flex-direction:column; align-items:center; text-align:center; }
+  .hero .mark { width:184px; height:auto; }
+  .hero .kicker { margin-top:18px; font-family:var(--font-body); font-weight:600; font-size:22px;
+    letter-spacing:0.30em; text-transform:uppercase; color:var(--brand); }
+  .hero h1 { font-family:var(--font-display); font-weight:700; font-size:164px; line-height:0.96;
+    letter-spacing:-0.04em; color:var(--ink); margin-top:10px;
+    background:linear-gradient(120deg,#2D1A4A 0%, #6D44C9 60%, #7C3AED 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .hero .fullform { font-family:var(--font-display); font-weight:600; font-size:38px;
+    color:var(--ink); margin-top:20px; letter-spacing:-0.01em; }
+  .hero .tagline { font-family:var(--font-body); font-weight:400; font-size:27px; color:var(--ink-dim);
+    margin-top:18px; max-width:1040px; line-height:1.5; }
+
+  /* credits band */
+  .credits { position:absolute; left:120px; right:120px; bottom:70px; z-index:2;
+    display:flex; justify-content:space-between; align-items:flex-start; gap:40px;
+    padding-top:34px; border-top:1px solid var(--surface-line); }
+  .credits .col { max-width:560px; }
+  .credits .lbl { font-family:var(--font-body); font-weight:600; font-size:17px; letter-spacing:0.16em;
+    text-transform:uppercase; color:var(--brand); }
+  .credits .v { font-family:var(--font-display); font-weight:700; font-size:26px; color:var(--ink);
+    margin-top:12px; line-height:1.35; }
+  .credits .v .reg { color:var(--ink-soft); font-weight:600; }
+  .credits .center { text-align:center; }
+  .credits .right { text-align:right; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <!-- centred guardian field -->
+  <svg class="ring-field" viewBox="0 0 1920 1080" fill="none">
+    <defs>
+      <radialGradient id="glow" cx="50%" cy="46%" r="46%">
+        <stop offset="0%" stop-color="#AD90DF" stop-opacity="0.16"/>
+        <stop offset="100%" stop-color="#AD90DF" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="1920" height="1080" fill="url(#glow)"/>
+    <circle cx="960" cy="500" r="250" stroke="#AD90DF" stroke-opacity="0.20" stroke-width="2"/>
+    <circle cx="960" cy="500" r="410" stroke="#AD90DF" stroke-opacity="0.13" stroke-width="2"/>
+    <circle cx="960" cy="500" r="580" stroke="#AD90DF" stroke-opacity="0.08" stroke-width="2"/>
+    <circle cx="960" cy="500" r="770" stroke="#AD90DF" stroke-opacity="0.05" stroke-width="2"/>
+    <ellipse cx="960" cy="500" rx="560" ry="220" stroke="#7C3AED" stroke-opacity="0.12" stroke-width="2" transform="rotate(-18 960 500)"/>
+    <circle cx="430" cy="420" r="9" fill="#7C3AED" fill-opacity="0.5"/>
+    <circle cx="1500" cy="600" r="9" fill="#AD90DF" fill-opacity="0.65"/>
+  </svg>
+
+  <div class="ist"><img src="../assets/ist-logo.jpeg" alt="Institute of Space Technology — KICSIT, Kahuta Campus"></div>
+
+  <div class="hero">
+    <!-- AEGIS mark: shield + guardian orbit, in Warm Blossom purple -->
+    <svg class="mark" viewBox="0 0 200 184" fill="none">
+      <defs>
+        <linearGradient id="sh" x1="44" y1="18" x2="156" y2="158" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#8B4DF0"/><stop offset="1" stop-color="#A78BFA"/>
+        </linearGradient>
+      </defs>
+      <path d="M100 20 L156 42 V84 C156 122 130 146 100 156 C70 146 44 122 44 84 V42 Z"
+        fill="url(#sh)"/>
+      <path d="M100 20 L156 42 V84 C156 122 130 146 100 156 C70 146 44 122 44 84 V42 Z"
+        stroke="#C4A8E8" stroke-opacity="0.6" stroke-width="2"/>
+      <!-- guardian core: pulse ring + node -->
+      <circle cx="100" cy="86" r="26" stroke="#fff" stroke-opacity="0.85" stroke-width="3"/>
+      <circle cx="100" cy="86" r="11" fill="#fff"/>
+      <!-- orbit -->
+      <ellipse cx="100" cy="90" rx="92" ry="34" stroke="#7C3AED" stroke-opacity="0.65" stroke-width="3" transform="rotate(-26 100 90)"/>
+      <circle cx="22" cy="64" r="8" fill="#7C3AED"/>
+      <circle cx="178" cy="116" r="8" fill="#AD90DF"/>
+    </svg>
+
+    <div class="kicker">Final Year Project</div>
+    <h1>AEGIS</h1>
+    <div class="fullform">Adaptive Edge-Intelligence Guardian and Safety System</div>
+    <div class="tagline">A smart child-safety wearable band with on-device stress detection, GPS geofencing and instant SMS alerts.</div>
+  </div>
+
+  <div class="credits">
+    <div class="col">
+      <div class="lbl">Presented by</div>
+      <div class="v">Barira Sarfraz &nbsp;<span class="reg">222201042</span><br>Nabeeha Zahid &nbsp;<span class="reg">222201009</span></div>
+    </div>
+    <div class="col center">
+      <div class="lbl">Supervised by</div>
+      <div class="v">Dr. Altaf Hussain</div>
+    </div>
+    <div class="col right">
+      <div class="lbl">Department &amp; Date</div>
+      <div class="v">Department of Computer Science<br><span class="reg">KICSIT, Kahuta Campus · June 2026</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

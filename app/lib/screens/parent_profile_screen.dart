@@ -19,44 +19,6 @@ String _personSvg(Color c) => '''
         stroke-linecap="round"/>
 </svg>''';
 
-String _emailSvg(Color c) => '''
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-     xmlns="http://www.w3.org/2000/svg">
-  <rect x="2" y="5" width="20" height="14" rx="2.5"
-        stroke="${_hexOf(c)}" stroke-width="2"/>
-  <path d="M3 7l9 6 9-6" stroke="${_hexOf(c)}" stroke-width="2"/>
-</svg>''';
-
-String _phoneSvg(Color c) => '''
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-     xmlns="http://www.w3.org/2000/svg">
-  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.9
-           12.07 19.79 19.79 0 01.85 3.51 2 2 0 012.83 2h3a2 2 0 012 1.72c.127.96.361
-           1.903.7 2.81a2 2 0 01-.45 2.11L6.91 9.91a16 16 0 006.14 6.14l1.27-1.27a2 2
-           0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"
-        stroke="${_hexOf(c)}" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round"/>
-</svg>''';
-
-String _homeSvg(Color c) => '''
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-     xmlns="http://www.w3.org/2000/svg">
-  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-        stroke="${_hexOf(c)}" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round"/>
-  <polyline points="9,22 9,12 15,12 15,22"
-            stroke="${_hexOf(c)}" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round"/>
-</svg>''';
-
-String _citySvg(Color c) => '''
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-     xmlns="http://www.w3.org/2000/svg">
-  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"
-        stroke="${_hexOf(c)}" stroke-width="2"/>
-  <circle cx="12" cy="10" r="3" stroke="${_hexOf(c)}" stroke-width="2"/>
-</svg>''';
-
 // ─────────────────────────────────────────────────────────────────────────────
 class ParentProfileScreen extends StatefulWidget {
   const ParentProfileScreen({super.key});
@@ -67,22 +29,11 @@ class ParentProfileScreen extends StatefulWidget {
 
 class _ParentProfileScreenState extends State<ParentProfileScreen> {
   // ── Controllers ───────────────────────────────────────────────────────────
-  final _nameCtrl       = TextEditingController();
-  final _emailCtrl      = TextEditingController();
-  final _phoneCtrl      = TextEditingController();
-  final _addressCtrl    = TextEditingController();
-  final _cityCtrl       = TextEditingController();
-  final _emergNameCtrl  = TextEditingController();
-  final _emergPhoneCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _nameFocus = FocusNode();
+  String _relation = '';
 
-  // ── Focus nodes ───────────────────────────────────────────────────────────
-  final _nameFocus      = FocusNode();
-  final _emailFocus     = FocusNode();
-  final _phoneFocus     = FocusNode();
-  final _addressFocus   = FocusNode();
-  final _cityFocus      = FocusNode();
-  final _emergNameFocus = FocusNode();
-  final _emergPhoneFocus= FocusNode();
+  static const _relations = ['Mother', 'Father', 'Guardian'];
 
   String? _photoPath;
   bool _loading = true;
@@ -92,40 +43,24 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
-    for (final n in [
-      _nameFocus, _emailFocus, _phoneFocus, _addressFocus,
-      _cityFocus, _emergNameFocus, _emergPhoneFocus,
-    ]) {
-      n.addListener(() => setState(() {}));
-    }
+    _nameFocus.addListener(() => setState(() {}));
   }
 
   Future<void> _loadProfile() async {
     final data = await PrefsService.getProfile();
     if (!mounted) return;
     setState(() {
-      _nameCtrl.text       = data['name']          ?? '';
-      _emailCtrl.text      = data['email']         ?? '';
-      _phoneCtrl.text      = data['phone']         ?? '';
-      _addressCtrl.text    = data['address']       ?? '';
-      _cityCtrl.text       = data['city']          ?? '';
-      _emergNameCtrl.text  = data['emergencyName'] ?? '';
-      _emergPhoneCtrl.text = data['emergencyPhone']?? '';
-      _photoPath           = data['photo']?.isEmpty == true ? null : data['photo'];
-      _loading             = false;
+      _nameCtrl.text = data['name']     ?? '';
+      _relation      = data['relation'] ?? '';
+      _photoPath     = data['photo']?.isEmpty == true ? null : data['photo'];
+      _loading       = false;
     });
   }
 
   @override
   void dispose() {
-    for (final c in [
-      _nameCtrl, _emailCtrl, _phoneCtrl, _addressCtrl,
-      _cityCtrl, _emergNameCtrl, _emergPhoneCtrl,
-    ]) c.dispose();
-    for (final n in [
-      _nameFocus, _emailFocus, _phoneFocus, _addressFocus,
-      _cityFocus, _emergNameFocus, _emergPhoneFocus,
-    ]) n.dispose();
+    _nameCtrl.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
@@ -161,13 +96,8 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     await PrefsService.saveProfile(
-      name:                  _nameCtrl.text.trim(),
-      email:                 _emailCtrl.text.trim(),
-      phone:                 _phoneCtrl.text.trim(),
-      address:               _addressCtrl.text.trim(),
-      city:                  _cityCtrl.text.trim(),
-      emergencyContactName:  _emergNameCtrl.text.trim(),
-      emergencyContactPhone: _emergPhoneCtrl.text.trim(),
+      name:     _nameCtrl.text.trim(),
+      relation: _relation,
     );
     if (!mounted) return;
     setState(() => _saving = false);
@@ -287,45 +217,49 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                                     _field(context, 'FULL NAME',
                                         _nameCtrl, _nameFocus, _personSvg,
                                         keyboard: TextInputType.name),
-                                    const SizedBox(height: 14),
-                                    _field(context, 'EMAIL ADDRESS',
-                                        _emailCtrl, _emailFocus, _emailSvg,
-                                        keyboard: TextInputType.emailAddress),
-                                    const SizedBox(height: 14),
-                                    _field(context, 'PHONE NUMBER',
-                                        _phoneCtrl, _phoneFocus, _phoneSvg,
-                                        keyboard: TextInputType.phone),
-                                    const SizedBox(height: 14),
-                                    _field(context, 'HOME ADDRESS',
-                                        _addressCtrl, _addressFocus, _homeSvg),
-                                    const SizedBox(height: 14),
-                                    _field(context, 'CITY',
-                                        _cityCtrl, _cityFocus, _citySvg),
-                                    const SizedBox(height: 20),
-
-                                    // Divider + emergency section
-                                    Divider(
-                                        color: AegisT.glassBorder(context),
-                                        thickness: 1,
-                                        height: 1),
                                     const SizedBox(height: 16),
                                     Text(
-                                      'Emergency Contact',
+                                      'YOUR RELATION TO YOUR CHILD',
                                       style: AegisText.label(color: D).copyWith(
                                           fontWeight: FontWeight.w700,
                                           letterSpacing: 0.4,
                                           fontSize: 11),
                                     ),
-                                    const SizedBox(height: 12),
-                                    _field(context, 'CONTACT NAME',
-                                        _emergNameCtrl, _emergNameFocus,
-                                        _personSvg,
-                                        keyboard: TextInputType.name),
-                                    const SizedBox(height: 14),
-                                    _field(context, 'CONTACT PHONE',
-                                        _emergPhoneCtrl, _emergPhoneFocus,
-                                        _phoneSvg,
-                                        keyboard: TextInputType.phone),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: _relations.map((r) {
+                                        final selected = _relation == r;
+                                        return GestureDetector(
+                                          onTap: () =>
+                                              setState(() => _relation = r),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 14, vertical: 10),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                              color: selected
+                                                  ? kAccent
+                                                  : (isDark
+                                                      ? const Color(0x0FFFFFFF)
+                                                      : const Color(
+                                                          0x0A7C3AED)),
+                                            ),
+                                            child: Text(r,
+                                                style: AegisText.label(
+                                                        color: selected
+                                                            ? Colors.white
+                                                            : D)
+                                                    .copyWith(
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w600)),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
                                     const SizedBox(height: 22),
 
                                     AegisPrimaryButton(

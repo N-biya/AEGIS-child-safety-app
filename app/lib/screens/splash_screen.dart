@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/firestore_service.dart';
 import '../services/prefs_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/aegis_text.dart';
@@ -17,6 +20,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _ctrl;
   late Animation<double> _fade;
   late Animation<double> _scale;
+  Timer? _navTimer;
 
   @override
   void initState() {
@@ -30,22 +34,36 @@ class _SplashScreenState extends State<SplashScreen>
         .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _ctrl.forward();
 
-    Future.delayed(const Duration(milliseconds: 1400), () async {
+    _navTimer = Timer(const Duration(milliseconds: 1400), () async {
       if (!mounted) return;
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         Navigator.of(context).pushReplacementNamed('/login');
-      } else {
-        final done = await PrefsService.isOnboardingDone();
-        if (!mounted) return;
-        Navigator.of(context)
-            .pushReplacementNamed(done ? '/home' : '/onboarding');
+        return;
       }
+
+      // The local "onboarding done" flag is per-device, not per-account —
+      // it can be stale after a reinstall or switching accounts on the same
+      // device. The real source of truth is whether THIS account has a
+      // linked child in Firestore, so always verify against the cloud.
+      final localDone = await PrefsService.isOnboardingDone();
+      var hasChild = false;
+      try {
+        hasChild = await FirestoreService().watchChildForUser(user.uid).first != null;
+      } catch (_) {
+        // If Firestore is unreachable, fall back to the local flag rather
+        // than forcing onboarding on every offline launch.
+        hasChild = localDone;
+      }
+      if (!mounted) return;
+      Navigator.of(context)
+          .pushReplacementNamed(hasChild ? '/home' : '/onboarding');
     });
   }
 
   @override
   void dispose() {
+    _navTimer?.cancel();
     _ctrl.dispose();
     super.dispose();
   }

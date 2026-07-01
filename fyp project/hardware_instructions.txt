@@ -1,0 +1,54 @@
+AEGIS MODEL — INSTRUCTIONS FOR ESP32 INTEGRATION
+==================================================
+
+WHAT TO DO
+-----------
+1. Copy the file "aegis_model.h" into your ESP32 project folder
+   (put it next to your main .ino or .cpp file).
+
+2. At the top of your code, add:
+       #include "aegis_model.h"
+
+3. Every time you want a prediction, build a list of 14 numbers
+   (see order below) from the sensor readings of the last 60 seconds,
+   then call:
+
+       float raw_features[14] = { ... your 14 numbers here ... };
+       int result = aegis_predict(raw_features);
+
+4. Check the result:
+       result == 0   ->  NORMAL
+       result == 1   ->  STRESS
+
+That's it. You do NOT need to scale/normalize the numbers yourself —
+the function does that internally. Just give it the raw values.
+
+
+THE 14 FEATURES — MUST BE IN THIS EXACT ORDER
+-----------------------------------------------
+Index   Name           What it is
+-----   ------------   --------------------------------------------
+0       hr_mean        Average heart rate (from BVP/pulse sensor)
+1       hrv            Heart rate variability (how much HR fluctuates)
+2       rmssd          Another heart rate variability measure
+3       eda_mean       Average skin conductance / GSR value
+4       eda_std        How much the GSR value varies
+5       eda_max        Highest GSR value seen
+6       eda_slope      Whether GSR is trending up or down
+7       spike_count    Number of sudden GSR spikes (sweat reactions)
+8       temp_mean      Average skin temperature
+9       temp_std       How much skin temperature varies
+10      temp_slope     Whether temperature is trending up or down
+11      acc_mean       Average movement intensity (accelerometer)
+12      acc_std        How much movement varies
+13      acc_max        Highest movement intensity seen
+
+All 14 values must be calculated over the SAME 60-second window of
+sensor data, in this exact order, before calling aegis_predict().
+
+
+NOTES
+-----
+- Don't edit aegis_model.h, it is auto-generated.
+- If the order of the 14 numbers is wrong, predictions will be wrong
+  even though there is no error/crash.

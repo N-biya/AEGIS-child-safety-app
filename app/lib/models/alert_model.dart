@@ -22,7 +22,7 @@ class AlertModel {
   factory AlertModel.fromMap(String id, Map<String, dynamic> map) => AlertModel(
         id:        id,
         type:      map['type'] as String,
-        timestamp: DateTime.parse(map['timestamp'] as String),
+        timestamp: DateTime.parse(map['timestamp'] as String).toLocal(),
         heartRate: (map['vitals']['hr'] as num).toInt(),
         spo2:      (map['vitals']['spo2'] as num).toInt(),
         latitude:  (map['location']['lat'] as num).toDouble(),

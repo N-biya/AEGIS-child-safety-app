@@ -4,19 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
+import '../models/child_model.dart';
 import '../router/app_router.dart';
 import '../screens/safe_zone_picker_screen.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 import '../services/map_service.dart';
 import '../services/prefs_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/aegis_text.dart';
+import '../utils/geofence.dart';
+import '../utils/map_tiles.dart';
+import '../utils/maps_launcher.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/aegis_animations.dart';
-
-// ── Tile URLs ─────────────────────────────────────────────────────────────────
-const _darkTile  =
-    'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png';
-const _lightTile = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+import '../widgets/sos_button.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 class MapScreen extends StatefulWidget {
@@ -27,7 +30,13 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  final _mapCtrl = MapController();
+  // ── Map engine ────────────────────────────────────────────────────────────
+  final MapController _mapController = MapController();
+  final _firestore = FirestoreService();
+
+  // Map overlay objects, rebuilt from app state.
+  List<CircleMarker> _circles   = [];
+  List<Polyline>     _polylines = [];
 
   // ── Persisted state ───────────────────────────────────────────────────────
   LatLng?       _safeZoneCenter;
@@ -53,10 +62,17 @@ class _MapScreenState extends State<MapScreen> {
   bool   _gpsLoading = false;
   String _gpsStatus  = 'Getting your location…';
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
     _loadAll();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadAll() async {
@@ -77,9 +93,100 @@ class _MapScreenState extends State<MapScreen> {
       _childName    = cn.isEmpty ? 'Aisha' : cn;
       _childInitial = _childName[0].toUpperCase();
     });
+    // Move map to loaded position (controller may not be attached yet — the
+    // FlutterMap's initialCenter covers that first frame, so a throw is fine).
+    if (_childPos != null) {
+      _moveMap(_childPos!);
+    } else if (_safeZoneCenter != null) {
+      _moveMap(_safeZoneCenter!);
+    }
+
     if (_childPos != null && _safeZoneCenter != null && _savedRoute == null) {
       _fetchRoutes();
     }
+    _refreshGeofence();
+    _refreshRoutes();
+  }
+
+  // ── Camera helper ─────────────────────────────────────────────────────────
+  void _moveMap(LatLng pos, [double zoom = 15]) {
+    // Throws if the map isn't attached yet (e.g. during initial load); ignore.
+    try {
+      _mapController.move(pos, zoom);
+    } catch (_) {}
+  }
+
+  // Opens the child's set location in the real Google Maps app (free, no key).
+  Future<void> _openChildInGoogleMaps() async {
+    final pos = _childPos;
+    if (pos == null) return;
+    final ok = await MapsLauncher.openLocation(pos.latitude, pos.longitude);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not open Google Maps.',
+            style: AegisText.body(color: Colors.white)),
+        backgroundColor: kAlert,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ));
+    }
+  }
+
+  // ── Geofence (flutter_map CircleMarker, radius in real metres) ────────────
+  void _refreshGeofence() {
+    if (_safeZoneCenter == null) {
+      if (_circles.isNotEmpty && mounted) setState(() => _circles = []);
+      return;
+    }
+    final circle = CircleMarker(
+      point:             _safeZoneCenter!,
+      radius:            _safeZoneRadius,
+      useRadiusInMeter:  true,
+      color:             kAccent.withValues(alpha: 0.18),
+      borderColor:       kAccent,
+      borderStrokeWidth: 2,
+    );
+    if (mounted) setState(() => _circles = [circle]);
+  }
+
+  // ── Route polylines (flutter_map Polylines) ───────────────────────────────
+  void _refreshRoutes() {
+    final polylines = <Polyline>[];
+
+    // A previously saved route renders as a single solid line.
+    if (_savedRoute != null && _routes.isEmpty) {
+      polylines.add(Polyline(
+        points:      _savedRoute!,
+        color:       kAccent,
+        strokeWidth: 6,
+      ));
+    }
+
+    // Candidate routes — selected one solid (with a soft glow beneath),
+    // the rest faded.
+    for (final r in _routes) {
+      if (r.index == _selectedRouteIdx) {
+        polylines.add(Polyline(
+          points:      r.points,
+          color:       kAccent.withValues(alpha: 0.20),
+          strokeWidth: 14,
+        ));
+        polylines.add(Polyline(
+          points:      r.points,
+          color:       kAccent,
+          strokeWidth: 6,
+        ));
+      } else {
+        polylines.add(Polyline(
+          points:      r.points,
+          color:       kAccent.withValues(alpha: 0.35),
+          strokeWidth: 4,
+        ));
+      }
+    }
+
+    if (mounted) setState(() => _polylines = polylines);
   }
 
   // ── Search sheet ──────────────────────────────────────────────────────────
@@ -95,7 +202,7 @@ class _MapScreenState extends State<MapScreen> {
             _searchPin     = r.position;
             _locationLabel = r.shortName;
           });
-          _mapCtrl.move(r.position, 15);
+          _moveMap(r.position);
         },
       ),
     );
@@ -120,7 +227,7 @@ class _MapScreenState extends State<MapScreen> {
             _locationLabel = fav.name;
             _searchPin     = null;
           });
-          _mapCtrl.move(fav.position, 15);
+          _moveMap(fav.position);
           MapPrefsService.saveChildLocation(fav.position);
           if (_safeZoneCenter != null) _fetchRoutes();
         },
@@ -130,6 +237,9 @@ class _MapScreenState extends State<MapScreen> {
 
   // ── Safe zone flow ────────────────────────────────────────────────────────
   Future<void> _startSafeZoneFlow() async {
+    // Capture the uid before any awaits (no context across async gaps).
+    final uid = context.read<AuthService>().userId;
+
     if (_safeZoneCenter != null) {
       final replace = await _showReplaceDialog();
       if (replace != true) return;
@@ -144,14 +254,36 @@ class _MapScreenState extends State<MapScreen> {
     if (radius == null || !mounted) return;
 
     await MapPrefsService.saveSafeZone(picked, radius);
+    // Mirror the safe zone to Firestore so the band can read it and raise
+    // breach alerts (the firmware reads geofence lat/lng/radius from the child doc).
+    if (uid.isNotEmpty) {
+      try {
+        final child = await _firestore.watchChildForUser(uid).first;
+        if (child != null) {
+          await _firestore.updateGeofence(
+            child.id,
+            GeofenceModel(
+              lat: picked.latitude,
+              lng: picked.longitude,
+              radiusMeters: radius,
+            ),
+          );
+        }
+      } catch (_) {
+        // Offline or no child yet — the local copy is still saved.
+      }
+    }
+    if (!mounted) return;
     setState(() {
-      _safeZoneCenter = picked;
-      _safeZoneRadius = radius;
-      _routes         = [];
-      _savedRoute     = null;
+      _safeZoneCenter  = picked;
+      _safeZoneRadius  = radius;
+      _routes          = [];
+      _savedRoute      = null;
       _hasStraightLine = false;
     });
-    _mapCtrl.move(picked, 15);
+    _moveMap(picked);
+    _refreshGeofence();
+    _refreshRoutes();
     await _showChildLocationSheet();
   }
 
@@ -281,9 +413,8 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  // ── GPS location — full error handling (Fix 4) ────────────────────────────
+  // ── GPS location ──────────────────────────────────────────────────────────
   Future<void> _locateViaGps() async {
-    // 1. Location services on?
     bool serviceEnabled;
     try {
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -324,7 +455,6 @@ class _MapScreenState extends State<MapScreen> {
       return;
     }
 
-    // 2. Permission
     LocationPermission perm;
     try {
       perm = await Geolocator.checkPermission();
@@ -334,7 +464,6 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     if (perm == LocationPermission.denied) {
-      // Show explanation before requesting
       if (!mounted) return;
       final proceed = await showDialog<bool>(
         context: context,
@@ -405,7 +534,6 @@ class _MapScreenState extends State<MapScreen> {
       return;
     }
 
-    // 3. Acquire position with loading overlay
     setState(() { _gpsLoading = true; _gpsStatus = 'Getting your location…'; });
 
     try {
@@ -417,13 +545,12 @@ class _MapScreenState extends State<MapScreen> {
 
       final got = LatLng(pos.latitude, pos.longitude);
 
-      // 4. Reverse geocode
       if (mounted) setState(() => _gpsStatus = 'Getting address…');
-      String address = '${got.latitude.toStringAsFixed(5)}, '
-          '${got.longitude.toStringAsFixed(5)}';
+      String address = 'Lat: ${got.latitude.toStringAsFixed(5)}, '
+          'Lng: ${got.longitude.toStringAsFixed(5)}';
       try {
         address = await NominatimService.reverse(pos.latitude, pos.longitude);
-      } catch (_) { /* use coordinate fallback */ }
+      } catch (_) {}
 
       if (!mounted) return;
       setState(() {
@@ -433,7 +560,7 @@ class _MapScreenState extends State<MapScreen> {
         _locationLabel = address;
       });
       await MapPrefsService.saveChildLocation(got);
-      _mapCtrl.move(got, 15);
+      _moveMap(got);
       if (_safeZoneCenter != null) _fetchRoutes();
 
     } on TimeoutException {
@@ -523,14 +650,30 @@ class _MapScreenState extends State<MapScreen> {
             _locationLabel = r.shortName;
           });
           MapPrefsService.saveChildLocation(r.position);
-          _mapCtrl.move(r.position, 15);
+          _moveMap(r.position);
           if (_safeZoneCenter != null) _fetchRoutes();
         },
       ),
     );
   }
 
-  // ── Route fetching with straight-line fallback ────────────────────────────
+  // ── Fit camera to show a full route ──────────────────────────────────────
+  void _fitRouteBounds(List<RouteOption> routes) {
+    if (routes.isEmpty) return;
+    final allPts = routes.expand((r) => r.points).toList();
+    if (allPts.isEmpty) return;
+
+    try {
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints(allPts),
+          padding: const EdgeInsets.all(80),
+        ),
+      );
+    } catch (_) {}
+  }
+
+  // ── Route fetching ────────────────────────────────────────────────────────
   Future<void> _fetchRoutes() async {
     if (_childPos == null || _safeZoneCenter == null) return;
     setState(() {
@@ -543,7 +686,6 @@ class _MapScreenState extends State<MapScreen> {
       final routes = await OsrmService.getRoutes(_childPos!, _safeZoneCenter!);
       if (!mounted) return;
       if (routes.isEmpty) {
-        // Straight-line fallback
         final fallback =
             OsrmService.straightLineFallback(_childPos!, _safeZoneCenter!);
         setState(() {
@@ -552,13 +694,15 @@ class _MapScreenState extends State<MapScreen> {
           _loadingRoutes   = false;
           _hasStraightLine = true;
         });
-        return;
+      } else {
+        setState(() {
+          _routes           = routes;
+          _selectedRouteIdx = 0;
+          _loadingRoutes    = false;
+        });
       }
-      setState(() {
-        _routes           = routes;
-        _selectedRouteIdx = 0;
-        _loadingRoutes    = false;
-      });
+      _refreshRoutes();
+      _fitRouteBounds(_routes);
     } on TimeoutException {
       if (!mounted) return;
       setState(() {
@@ -580,7 +724,12 @@ class _MapScreenState extends State<MapScreen> {
     if (_routes.isEmpty) return;
     final pts = _routes[_selectedRouteIdx].points;
     await MapPrefsService.saveRoute(pts);
-    setState(() { _savedRoute = pts; _routes = []; _hasStraightLine = false; });
+    setState(() {
+      _savedRoute      = pts;
+      _routes          = [];
+      _hasStraightLine = false;
+    });
+    _refreshRoutes();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Safe route saved!',
@@ -600,78 +749,61 @@ class _MapScreenState extends State<MapScreen> {
     final T      = AegisT.text(context);
     final D      = AegisT.textDim(context);
 
-    final tileUrl = isDark ? _darkTile : _lightTile;
-
-    // Polylines
-    final polylines = <Polyline>[];
-    if (_savedRoute != null && _routes.isEmpty) {
-      polylines.add(Polyline(
-        points: _savedRoute!, color: kAccent, strokeWidth: 5));
-    }
-    for (final r in _routes) {
-      final sel = r.index == _selectedRouteIdx;
-      polylines.add(Polyline(
-        points:      r.points,
-        color:       sel ? kAccent : const Color(0x597C3AED),
-        strokeWidth: sel ? 6 : 4,
-      ));
-    }
+    final defaultCenter = _childPos ?? _safeZoneCenter ?? const LatLng(31.5204, 74.3587);
 
     return Scaffold(
       body: Stack(
         children: [
-          // ── Map (Fix 1: minZoom / maxZoom) ────────────────────────────
-          FlutterMap(
-            mapController: _mapCtrl,
-            options: MapOptions(
-              initialCenter: _childPos ??
-                  _safeZoneCenter ??
-                  const LatLng(31.5204, 74.3587),
-              initialZoom: 15,
-              minZoom: 3,
-              maxZoom: 19,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate:          tileUrl,
-                userAgentPackageName: 'com.aegis.aegis',
+          // ── Free OpenStreetMap (flutter_map) — no API key, no billing ──
+          Positioned.fill(
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: defaultCenter,
+                initialZoom:   14,
+                minZoom:       3,
+                maxZoom:       19,
               ),
-              if (polylines.isNotEmpty)
-                PolylineLayer(polylines: polylines),
-              if (_safeZoneCenter != null)
-                CircleLayer(circles: [
-                  CircleMarker(
-                    point:             _safeZoneCenter!,
-                    radius:            _safeZoneRadius,
-                    useRadiusInMeter:  true,
-                    color:             const Color(0x2E7C3AED),
-                    borderColor:       kAccent,
-                    borderStrokeWidth: 2,
-                  ),
-                ]),
-              if (_searchPin != null)
+              children: [
+                TileLayer(
+                  urlTemplate:          MapTiles.urlFor(isDark),
+                  userAgentPackageName: MapTiles.userAgent,
+                  maxZoom:              19,
+                ),
+                if (_circles.isNotEmpty) CircleLayer(circles: _circles),
+                if (_polylines.isNotEmpty) PolylineLayer(polylines: _polylines),
                 MarkerLayer(markers: [
-                  Marker(
-                    point: _searchPin!, width: 40, height: 40,
-                    child: const Icon(Icons.location_on, color: kAccent, size: 40),
-                  ),
+                  if (_childPos != null)
+                    Marker(
+                      point:     _childPos!,
+                      width:     48,
+                      height:    48,
+                      alignment: Alignment.center,
+                      child:     _ChildMarker(initial: _childInitial),
+                    ),
+                  if (_searchPin != null)
+                    Marker(
+                      point:     _searchPin!,
+                      width:     40,
+                      height:    40,
+                      alignment: Alignment.topCenter,
+                      child:     const Icon(Icons.location_on, color: kAccent, size: 40),
+                    ),
                 ]),
-              if (_childPos != null)
-                MarkerLayer(markers: [
-                  Marker(
-                    point: _childPos!, width: 48, height: 48,
-                    child: _ChildMarker(initial: _childInitial),
+                // Attribution (required by OSM / CARTO usage policy).
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 4, bottom: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.6),
+                    child: Text(MapTiles.attribution,
+                        style: AegisText.micro9(color: D).copyWith(fontSize: 9)),
                   ),
-                ]),
-            ],
-          ),
-
-          // Dark tint
-          if (isDark)
-            Positioned.fill(
-              child: IgnorePointer(
-                  child: Container(color: const Color(0x1A1A0F2E))),
+                ),
+              ],
             ),
+          ),
 
           // ── Top bar ───────────────────────────────────────────────────
           Positioned(
@@ -739,7 +871,48 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
 
-          // ── Draggable bottom sheet (Fix 2) ─────────────────────────────
+          // ── Emergency SOS button ──────────────────────────────────────
+          Positioned(
+            top:   MediaQuery.of(context).padding.top + 78,
+            right: 16,
+            child: const SosButton(),
+          ),
+
+          // ── "Open in Google Maps" (free link — full Google data) ──────
+          if (_childPos != null)
+            Positioned(
+              top:  MediaQuery.of(context).padding.top + 78,
+              left: 16,
+              child: GestureDetector(
+                onTap: _openChildInGoogleMaps,
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    color: isDark ? const Color(0xE62D1A4A) : Colors.white,
+                    border: Border.all(color: AegisT.glassBorder(context)),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x1A000000), blurRadius: 12, offset: Offset(0, 4)),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.map_outlined, size: 18, color: kAccent),
+                      const SizedBox(width: 6),
+                      Text('Google Maps',
+                          style: AegisText.label(color: T)
+                              .copyWith(fontWeight: FontWeight.w700, fontSize: 12)),
+                      const SizedBox(width: 2),
+                      Icon(Icons.open_in_new_rounded, size: 13, color: AegisT.textDim(context)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Draggable bottom sheet ────────────────────────────────────
           DraggableScrollableSheet(
             initialChildSize: 0.45,
             minChildSize:     0.18,
@@ -761,16 +934,22 @@ class _MapScreenState extends State<MapScreen> {
               loadingRoutes:    _loadingRoutes,
               routeError:       _routeError,
               hasStraightLine:  _hasStraightLine,
-              onRadiusChanged:  (v) => setState(() => _safeZoneRadius = v),
-              onRouteSelect:    (i) => setState(() => _selectedRouteIdx = i),
-              onSetSafeZone:    _startSafeZoneFlow,
-              onSetChildLoc:    _showChildLocationSheet,
-              onSaveRoute:      _saveRoute,
-              onRetryRoutes:    _fetchRoutes,
+              onRadiusChanged:  (v) {
+                setState(() => _safeZoneRadius = v);
+                _refreshGeofence();
+              },
+              onRouteSelect: (i) {
+                setState(() => _selectedRouteIdx = i);
+                _refreshRoutes();
+              },
+              onSetSafeZone: _startSafeZoneFlow,
+              onSetChildLoc: _showChildLocationSheet,
+              onSaveRoute:   _saveRoute,
+              onRetryRoutes: _fetchRoutes,
             ),
           ),
 
-          // ── GPS loading overlay (Fix 4) ────────────────────────────────
+          // ── GPS loading overlay ───────────────────────────────────────
           if (_gpsLoading)
             Positioned.fill(
               child: Container(
@@ -847,7 +1026,7 @@ class _ChildMarker extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Fix 2 — Draggable panel replacing the old static _BottomPanel
+// Draggable panel
 // ─────────────────────────────────────────────────────────────────────────────
 class _DraggablePanel extends StatelessWidget {
   final ScrollController scrollCtrl;
@@ -889,9 +1068,7 @@ class _DraggablePanel extends StatelessWidget {
 
   bool get _insideZone {
     if (childPos == null || safeZoneCenter == null) return false;
-    return const Distance().as(
-            LengthUnit.Meter, childPos!, safeZoneCenter!) <=
-        safeZoneRadius;
+    return isInsideZone(childPos!, safeZoneCenter!, safeZoneRadius);
   }
 
   @override
@@ -918,7 +1095,6 @@ class _DraggablePanel extends StatelessWidget {
                 18,
                 MediaQuery.of(context).padding.bottom + kNavBarHeight + 8),
             children: [
-              // ── Handle ──────────────────────────────────────────────
               const SizedBox(height: 10),
               Center(
                 child: Container(
@@ -934,7 +1110,6 @@ class _DraggablePanel extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // ── Child row + status ───────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -985,7 +1160,6 @@ class _DraggablePanel extends StatelessWidget {
                 ),
               ],
 
-              // ── Route loading ────────────────────────────────────────
               if (loadingRoutes) ...[
                 const SizedBox(height: 16),
                 const Center(child: CircularProgressIndicator(color: kAccent)),
@@ -996,7 +1170,6 @@ class _DraggablePanel extends StatelessWidget {
                 ),
               ],
 
-              // ── Route error ──────────────────────────────────────────
               if (routeError != null && !loadingRoutes) ...[
                 const SizedBox(height: 14),
                 Container(
@@ -1029,7 +1202,6 @@ class _DraggablePanel extends StatelessWidget {
                 ),
               ],
 
-              // ── Route cards (Fix 3) + Save button ───────────────────
               if (routes.isNotEmpty && !loadingRoutes) ...[
                 const SizedBox(height: 14),
                 if (hasStraightLine)
@@ -1072,7 +1244,6 @@ class _DraggablePanel extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              // ── Radius slider ────────────────────────────────────────
               if (safeZoneCenter != null) ...[
                 GlassCard(
                   padding: const EdgeInsets.all(14),
@@ -1128,7 +1299,6 @@ class _DraggablePanel extends StatelessWidget {
                 const SizedBox(height: 10),
               ],
 
-              // ── Set / Update Safe Zone button ────────────────────────
               GestureDetector(
                 onTap: onSetSafeZone,
                 child: Container(
@@ -1173,7 +1343,7 @@ class _DraggablePanel extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Fix 3 — Redesigned route cards
+// Route cards
 // ─────────────────────────────────────────────────────────────────────────────
 class _RouteCards extends StatelessWidget {
   final List<RouteOption> routes;
@@ -1246,7 +1416,6 @@ class _RouteCards extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // Row 1: Route label
                     Text(
                       'Route ${i + 1}',
                       style: AegisText.label(
@@ -1254,7 +1423,6 @@ class _RouteCards extends StatelessWidget {
                           .copyWith(
                               fontWeight: FontWeight.w700, fontSize: 13),
                     ),
-                    // Row 2: Distance (prominent)
                     Text(
                       r.distanceLabel,
                       style: AegisText.body(
@@ -1262,7 +1430,6 @@ class _RouteCards extends StatelessWidget {
                           .copyWith(
                               fontWeight: FontWeight.w600, fontSize: 16),
                     ),
-                    // Row 3: Walking time
                     Text(
                       r.walkingDurationLabel,
                       style: AegisText.body(
@@ -1319,7 +1486,7 @@ class _StatusPill extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Nominatim search bottom sheet — updated for subTitle display
+// Search bottom sheet  (MapTiler geocoding — 400 ms debounce)
 // ─────────────────────────────────────────────────────────────────────────────
 class _SearchSheet extends StatefulWidget {
   final ValueChanged<NominatimResult> onPicked;
@@ -1359,7 +1526,7 @@ class _SearchSheetState extends State<_SearchSheet> {
       return;
     }
     _debounce =
-        Timer(const Duration(milliseconds: 600), () => _search(q));
+        Timer(const Duration(milliseconds: 400), () => _search(q));
   }
 
   Future<void> _search(String q) async {
@@ -1374,12 +1541,16 @@ class _SearchSheetState extends State<_SearchSheet> {
             ? 'No locations found. Try a different search.'
             : null;
       });
-    } catch (_) {
+    } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error   = 'No internet connection. Search is unavailable.';
-      });
+      setState(() { _loading = false; _error = e.message ?? 'Search is unavailable right now. Try again.'; });
+    } on NoInternetException {
+      if (!mounted) return;
+      setState(() { _loading = false; _error = 'Search needs an internet connection.'; });
+    } catch (e) {
+      debugPrint('Search error: $e');
+      if (!mounted) return;
+      setState(() { _loading = false; _error = 'Search is unavailable right now. Try again.'; });
     }
   }
 
@@ -1399,7 +1570,6 @@ class _SearchSheetState extends State<_SearchSheet> {
                   .copyWith(fontWeight: FontWeight.w700, fontSize: 18)),
           const SizedBox(height: 14),
 
-          // Search field
           Container(
             height: 48,
             decoration: BoxDecoration(
@@ -1811,7 +1981,7 @@ class _FavouritesSheetState extends State<_FavouritesSheet> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Add favourite sheet
+// Add favourite sheet  (400 ms debounce + updated error messages)
 // ─────────────────────────────────────────────────────────────────────────────
 class _AddFavouriteSheet extends StatefulWidget {
   final Set<String> existingAddresses;
@@ -1860,7 +2030,7 @@ class _AddFavouriteSheetState extends State<_AddFavouriteSheet> {
       return;
     }
     _debounce =
-        Timer(const Duration(milliseconds: 600), () => _doSearch(q));
+        Timer(const Duration(milliseconds: 400), () => _doSearch(q));
   }
 
   Future<void> _doSearch(String q) async {
@@ -1875,12 +2045,16 @@ class _AddFavouriteSheetState extends State<_AddFavouriteSheet> {
             ? 'No locations found. Try a different search.'
             : null;
       });
-    } catch (_) {
+    } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() {
-        _loading     = false;
-        _searchError = 'No internet connection. Search is unavailable.';
-      });
+      setState(() { _loading = false; _searchError = e.message ?? 'Search is unavailable right now. Try again.'; });
+    } on NoInternetException {
+      if (!mounted) return;
+      setState(() { _loading = false; _searchError = 'Search needs an internet connection.'; });
+    } catch (e) {
+      debugPrint('Search error: $e');
+      if (!mounted) return;
+      setState(() { _loading = false; _searchError = 'Search is unavailable right now. Try again.'; });
     }
   }
 
@@ -2117,7 +2291,6 @@ class _SimpleField extends StatelessWidget {
   }
 }
 
-/// Standardised modal bottom-sheet card wrapper
 class _ModalCard extends StatelessWidget {
   final Widget child;
   const _ModalCard({required this.child});
@@ -2170,7 +2343,6 @@ class _ModalCard extends StatelessWidget {
   }
 }
 
-/// Full-width accent button
 class _AccentButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;

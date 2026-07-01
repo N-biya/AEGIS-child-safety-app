@@ -1,0 +1,350 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   AEGIS — FYP PRESENTATION DESIGN SYSTEM  (single source of truth)
+   Derived from the Flutter app's "Warm Blossom" light theme
+   (app/lib/utils/app_colors.dart). Every slide @imports this file so the
+   whole deck stays cohesive. Edit tokens here -> re-render all slides.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Fonts: Sora (display) + Inter (body) primary; Plus Jakarta Sans loaded for
+   the warm-alternative comparison. Swap --font-display to compare. */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* ── Canvas ────────────────────────────────────────────────────────────── */
+  --slide-w: 1920px;
+  --slide-h: 1080px;
+
+  /* ── Backgrounds (soft off-white, never pure #FFF) ──────────────────────── */
+  --bg:        #FBF7FF;   /* app kLightBg — soft off-white slide background    */
+  --bg-alt:    #F3EBFF;   /* panel / sidebar tint                              */
+  --bg-deep:   #ECE0FB;   /* deepest off-white wash for banded sections        */
+
+  /* ── Surfaces (cards) ───────────────────────────────────────────────────── */
+  --surface:    #FFFFFF;  /* app kLightCard                                    */
+  --surface-2:  #FAF6FF;  /* subtly tinted card                                */
+  --surface-line: #ECE3F7;/* hairline divider on surfaces                      */
+
+  /* ── Text / ink ─────────────────────────────────────────────────────────── */
+  --ink:       #2D1A4A;   /* app kLightText  — headings + body                 */
+  --ink-dim:   #6E5494;   /* secondary text (slightly deeper for body comfort) */
+  --ink-soft:  #9E86C0;   /* tertiary / captions / footers                     */
+
+  /* ── Purple family ──────────────────────────────────────────────────────── */
+  --brand:        #7C3AED;  /* app kAccent — FULL strength, small emphasis only */
+  --primary:      #AD90DF;  /* DERIVED PASTEL — slide accent: rules, decoration */
+  --primary-deep: #6D44C9;  /* readable purple for heading text                 */
+  --primary-light:#C4A8E8;  /* app kAccentPale                                   */
+  --primary-soft: #EDE0FF;  /* app kLightNav — soft fills / chips               */
+  --primary-wash: #F3ECFD;  /* faintest tint for blocks behind content          */
+  --accent-light: #A78BFA;  /* app kAccentLight — gradient partner              */
+
+  /* ── Status (universal, from app) ───────────────────────────────────────── */
+  --safe:    #34D399;
+  --stress:  #F5A623;
+  --alert:   #F43F5E;
+  --calib:   #A78BFA;
+  --offline: #64748B;
+
+  /* ═══ TYPOGRAPHY ═══════════════════════════════════════════════════════════
+     Modular scale (~1.32 between steps where hierarchy matters). Big gap
+     between headings and body so structure is obvious at a glance.
+     Only 3 weights total: Sora 700 (headings) · Inter 400 (body) · Inter 600
+     (eyebrows / labels / emphasis).                                          */
+  --font-display: 'Sora', sans-serif;        /* headings / display            */
+  --font-body:    'Inter', sans-serif;       /* body / labels                 */
+
+  --fs-hero:    160px;  /* title-slide hero        */
+  --fs-title:    68px;  /* H1 — slide title        */
+  --fs-h2:       46px;  /* H2 — section heading    */
+  --fs-h3:       34px;  /* H3 — subheading / card  */
+  --fs-lead:     28px;  /* lead paragraph          */
+  --fs-body:     28px;  /* body (never below 24)   */
+  --fs-caption:  21px;  /* caption / label         */
+  --fs-eyebrow:  21px;  /* kicker                  */
+  --fs-footer:   17px;  /* footer                  */
+
+  --lh-tight: 1.08;     /* big headings            */
+  --lh-snug:  1.18;     /* section headings        */
+  --lh-mid:   1.30;     /* subheadings             */
+  --lh-body:  1.55;     /* body copy               */
+
+  --ls-title: -0.022em; /* crisp large headings    */
+  --ls-h2:    -0.012em;
+  --ls-eyebrow: 0.16em;
+
+  --w-bold: 700;        /* Sora headings           */
+  --w-reg:  400;        /* Inter body              */
+  --w-semi: 600;        /* Inter labels / emphasis */
+
+  --measure: 60ch;      /* comfortable line length cap */
+
+  /* ── Spacing scale (8px base) ───────────────────────────────────────────── */
+  --s-1: 8px;  --s-2: 16px; --s-3: 24px; --s-4: 32px;
+  --s-5: 48px; --s-6: 64px; --s-7: 96px; --s-8: 128px;
+
+  --pad-x: 120px;   /* slide outer side padding */
+  --pad-t: 88px;    /* slide outer top padding  */
+  --pad-b: 72px;    /* slide outer bottom pad   */
+  --panel-w: 620px; /* signature split: left title panel width */
+
+  --radius:    24px;
+  --radius-sm: 16px;
+  --radius-lg: 32px;
+
+  --shadow-card:  0 18px 48px rgba(45, 26, 74, 0.08);
+  --shadow-soft:  0 10px 30px rgba(45, 26, 74, 0.06);
+  --shadow-phone: 0 40px 90px rgba(45, 26, 74, 0.22);
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { background: #d9cdee; }   /* neutral page bg behind slide for preview */
+
+.slide {
+  position: relative;
+  width: var(--slide-w);
+  height: var(--slide-h);
+  background: var(--bg);
+  font-family: var(--font-body);
+  font-weight: var(--w-reg);
+  color: var(--ink);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+/* ── Soft aurora blobs (subtle, matches app aurora bg) ──────────────────────── */
+.slide__aura { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.slide__aura::before,
+.slide__aura::after {
+  content: ""; position: absolute; border-radius: 50%; filter: blur(90px);
+}
+.slide__aura::before {
+  width: 620px; height: 620px; top: -220px; right: -160px;
+  background: radial-gradient(circle, rgba(173,144,223,0.30), rgba(173,144,223,0) 70%);
+}
+.slide__aura::after {
+  width: 520px; height: 520px; bottom: -240px; left: -180px;
+  background: radial-gradient(circle, rgba(196,168,232,0.26), rgba(196,168,232,0) 70%);
+}
+
+/* ── Content frame ──────────────────────────────────────────────────────────── */
+.slide__body {
+  position: absolute; inset: 0;
+  padding: var(--pad-t) var(--pad-x) var(--pad-b);
+  display: flex; flex-direction: column;
+}
+
+/* ── Header: eyebrow + title + accent rule ──────────────────────────────────── */
+.eyebrow {
+  font-family: var(--font-body);
+  font-weight: var(--w-semi); font-size: var(--fs-eyebrow);
+  letter-spacing: var(--ls-eyebrow); text-transform: uppercase;
+  color: var(--brand);                 /* full-strength purple = readable small */
+  display: flex; align-items: center; gap: 14px;
+}
+.eyebrow::before {
+  content: ""; width: 34px; height: 3px; border-radius: 3px;
+  background: var(--primary);          /* pastel rule */
+}
+
+.slide-title {
+  font-family: var(--font-display);
+  font-weight: var(--w-bold); font-size: var(--fs-title);
+  line-height: var(--lh-tight); color: var(--ink);
+  margin-top: var(--s-3);
+  letter-spacing: var(--ls-title);
+}
+.slide-title .em { color: var(--brand); }     /* small emphasis word */
+
+/* Section heading (within-slide H2) — purple, readable */
+.section-heading {
+  font-family: var(--font-display);
+  font-weight: var(--w-bold); font-size: var(--fs-h2);
+  line-height: var(--lh-snug); letter-spacing: var(--ls-h2);
+  color: var(--primary-deep);
+}
+
+.accent-rule {
+  width: 88px; height: 5px; border-radius: 5px;
+  margin-top: var(--s-3);
+  background: linear-gradient(90deg, var(--primary), var(--accent-light));
+}
+
+.slide-sub {
+  font-family: var(--font-body); font-weight: var(--w-reg);
+  font-size: var(--fs-lead); color: var(--ink-dim);
+  margin-top: var(--s-3); max-width: 1120px; line-height: var(--lh-mid);
+}
+
+/* ── Body copy ──────────────────────────────────────────────────────────────── */
+.body-text { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-dim); max-width: var(--measure); }
+.caption   { font-family: var(--font-body); font-weight: var(--w-semi); font-size: var(--fs-caption); color: var(--ink-soft); }
+
+/* ── Footer (consistent on every content slide) ─────────────────────────────── */
+.slide__footer {
+  position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 46px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: var(--fs-footer); color: var(--ink-soft); font-weight: var(--w-reg);
+}
+.slide__footer .brandmark { display: flex; align-items: center; gap: 12px; font-weight: var(--w-semi); color: var(--ink-dim); letter-spacing: 0.04em; }
+.slide__footer .brandmark .dot { width: 12px; height: 12px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--brand)); }
+.slide__footer .page-num { font-family: var(--font-display); font-weight: var(--w-bold); color: var(--primary-deep); }
+.footer-rule { position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 84px;
+  height: 1px; background: var(--surface-line); }
+
+/* ── Cards ──────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface); border-radius: var(--radius);
+  box-shadow: var(--shadow-card); padding: var(--s-5);
+  border: 1px solid var(--surface-line);
+}
+.card h3 { font-family: var(--font-display); font-weight: var(--w-bold); font-size: var(--fs-h3); color: var(--ink); line-height: var(--lh-mid); letter-spacing: -0.01em; }
+.card p  { font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink-dim); line-height: var(--lh-body); margin-top: var(--s-2); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--primary-soft); color: var(--brand);
+  font-family: var(--font-body); font-weight: var(--w-semi); font-size: var(--fs-caption);
+  padding: 10px 20px; border-radius: 100px;
+}
+
+/* ── Icon tile (rounded, soft purple) ───────────────────────────────────────── */
+.icon-tile {
+  width: 72px; height: 72px; border-radius: 20px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--primary-soft), #fff);
+  border: 1px solid var(--surface-line);
+  color: var(--brand);
+}
+
+/* ── Feature / requirement card (id + title + line) ─────────────────────────── */
+.fr-card {
+  background: var(--surface); border-radius: var(--radius);
+  box-shadow: var(--shadow-soft); border: 1px solid var(--surface-line);
+  padding: 26px 34px; display: flex; gap: 22px; align-items: flex-start;
+}
+.fr-id {
+  flex: 0 0 auto; font-family: var(--font-display); font-weight: var(--w-bold);
+  font-size: 17px; letter-spacing: 0.02em; color: var(--brand);
+  background: var(--primary-soft); border-radius: 12px;
+  padding: 10px 14px; min-width: 70px; text-align: center;
+}
+.fr-card .fr-title { font-family: var(--font-display); font-weight: var(--w-bold); font-size: var(--fs-h3); color: var(--ink); line-height: 1.2; letter-spacing: -0.01em; }
+.fr-card .fr-desc  { font-family: var(--font-body); font-weight: var(--w-reg); font-size: var(--fs-body); color: var(--ink-dim); line-height: var(--lh-body); margin-top: 8px; }
+
+/* ── Diagram placeholder (for diagram slides) ───────────────────────────────── */
+.placeholder {
+  flex: 1; border-radius: var(--radius-lg);
+  border: 2.5px dashed var(--primary-light);
+  background:
+    repeating-linear-gradient(45deg, rgba(173,144,223,0.05) 0 18px, rgba(173,144,223,0) 18px 36px),
+    var(--surface-2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--s-3); text-align: center;
+}
+.placeholder .ph-icon {
+  width: 96px; height: 96px; border-radius: 24px; display: grid; place-items: center;
+  background: var(--primary-soft); color: var(--brand);
+}
+.placeholder .ph-title { font-family: var(--font-display); font-weight: var(--w-bold); font-size: 34px; color: var(--ink); letter-spacing: -0.01em; }
+.placeholder .ph-note  { font-family: var(--font-body); font-size: var(--fs-body); color: var(--ink-soft); }
+.placeholder .ph-tag {
+  font-family: var(--font-body); font-size: 15px; font-weight: var(--w-semi); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--brand); background: var(--primary-soft);
+  padding: 8px 18px; border-radius: 100px;
+}
+
+/* ── Phone frame (for app-screenshot slides) ────────────────────────────────── */
+.phone {
+  width: 320px; height: 690px; border-radius: 46px;
+  background: #1A0F2E; padding: 12px;
+  box-shadow: var(--shadow-phone);
+  position: relative; flex: 0 0 auto;
+}
+.phone__screen { width: 100%; height: 100%; border-radius: 36px; overflow: hidden; background: var(--bg); }
+.phone__screen img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.phone__notch {
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  width: 110px; height: 26px; border-radius: 100px; background: #1A0F2E; z-index: 2;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIGNATURE LAYOUT — "Guardian Split"
+   Asymmetric tinted title panel (left) + content (right), with the protection
+   rings broadcasting from the panel edge. Reused by every content slide; title,
+   diagram and screenshot slides use variants of these same pieces.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* radar / protection rings — full-slide, behind everything */
+.ring-field { position:absolute; inset:0; width:var(--slide-w); height:var(--slide-h);
+  pointer-events:none; z-index:0; }
+
+/* ── Left title panel ───────────────────────────────────────────────────────── */
+.panel {
+  position:absolute; left:0; top:0; bottom:0; width:var(--panel-w); z-index:2; overflow:hidden;
+  background:linear-gradient(158deg, #F1E7FF 0%, #E9D9FB 100%);
+  padding:92px 68px 76px;
+}
+.panel .orbit { position:absolute; left:68px; top:88px; width:80px; height:80px; }
+.panel .ghost {
+  position:absolute; right:-26px; bottom:-86px; font-family:var(--font-display);
+  font-weight:700; font-size:400px; line-height:0.8; color:transparent;
+  -webkit-text-stroke:2px rgba(124,58,237,0.14); user-select:none;
+}
+.panel .eyebrow { color:var(--brand); margin-top:128px; }
+.panel h1 {
+  font-family:var(--font-display); font-weight:700; font-size:74px; line-height:1.02;
+  letter-spacing:-0.03em; color:var(--ink); margin-top:24px;
+}
+.panel h1 span { display:block; color:var(--primary-deep); }
+.panel .lead {
+  font-family:var(--font-body); font-size:26px; line-height:1.5; color:var(--ink-dim);
+  margin-top:30px; max-width:450px;
+}
+.panel .tag {
+  position:absolute; left:68px; bottom:74px; z-index:3; font-family:var(--font-body);
+  font-weight:600; font-size:15px; letter-spacing:0.12em; text-transform:uppercase; color:var(--brand);
+  background:rgba(255,255,255,0.72); padding:10px 20px; border-radius:100px;
+}
+
+/* ── Right content region ───────────────────────────────────────────────────── */
+.content {
+  position:absolute; left:var(--panel-w); right:0; top:0; bottom:0; z-index:2;
+  padding:96px 96px 84px 88px;
+}
+.content .foot {
+  position:absolute; left:88px; right:96px; bottom:46px; display:flex;
+  justify-content:space-between; align-items:center;
+  font-family:var(--font-body); font-size:15px; color:var(--ink-soft);
+}
+.content .foot .pg { font-family:var(--font-display); font-weight:700; color:var(--primary-deep); font-size:16px; }
+
+/* ── Editorial divided list (sized for from-the-back legibility) ────────────── */
+.fr-list { display:grid; grid-template-columns:1fr 1fr; gap:0 60px; }
+.fr-row {
+  display:flex; gap:26px; align-items:flex-start; padding:30px 0;
+  border-bottom:1px solid var(--surface-line);
+}
+.fr-row:nth-last-child(-n+2){ border-bottom:none; }
+.fr-row .n {
+  flex:0 0 auto; font-family:var(--font-display); font-weight:700; font-size:42px;
+  color:transparent; -webkit-text-stroke:1.6px var(--primary); min-width:66px; line-height:1; padding-top:2px;
+}
+.fr-row .t {
+  font-family:var(--font-display); font-weight:700; font-size:32px; color:var(--ink);
+  line-height:1.16; letter-spacing:-0.01em;
+}
+.fr-row .d {
+  font-family:var(--font-body); font-size:27px; color:var(--ink-dim); line-height:1.45;
+  margin-top:9px; max-width:500px;
+}
+
+/* ── Utility ────────────────────────────────────────────────────────────────── */
+.row { display: flex; gap: var(--s-4); }
+.col { display: flex; flex-direction: column; gap: var(--s-4); }
+.grow { flex: 1; }
+.muted { color: var(--ink-dim); }
+.center { align-items: center; justify-content: center; }

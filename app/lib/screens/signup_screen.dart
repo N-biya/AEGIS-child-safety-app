@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/prefs_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/aegis_text.dart';
 import '../widgets/aurora_bg.dart';
@@ -144,6 +145,10 @@ class _SignupScreenState extends State<SignupScreen>
     final error = await context.read<AuthService>().signUp(email, pass, name);
     if (!mounted) return;
     if (error == null) {
+      // Persist the name immediately so it survives even if onboarding is
+      // interrupted or the app is reinstalled and the parent logs back in.
+      await PrefsService.setParentName(name);
+      if (!mounted) return;
       Navigator.of(context).pushReplacementNamed('/onboarding');
     } else {
       setState(() { _loading = false; _error = error; });
