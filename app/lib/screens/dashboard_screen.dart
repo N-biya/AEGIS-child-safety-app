@@ -8,6 +8,8 @@ import '../models/alert_model.dart';
 import '../models/child_model.dart';
 import '../models/vital_model.dart';
 import '../services/auth_service.dart';
+import '../services/alarm_dispatcher.dart';
+import '../services/device_location_service.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 import '../services/prefs_service.dart';
@@ -82,6 +84,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     NotificationService().init();
+    AlarmDispatcher.wire();
     _loadParent();
     _subscribeToChild();
     // Ticks once a second so the "last reading … ago" label stays current
@@ -97,6 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _alertSub?.cancel();
     _vitalSub?.cancel();
     _tickTimer?.cancel();
+    DeviceLocationService.instance.stop();
     super.dispose();
   }
 
@@ -183,6 +187,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (child != null) {
         _subscribeToAlerts(child.id);
         _subscribeToVitals(child.id);
+        // Keep the band mirroring this phone's location (demo geofence).
+        DeviceLocationService.instance.start(child.id);
       }
     });
   }
@@ -207,15 +213,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       for (final alert in alerts) {
         if (_seenAlertIds.contains(alert.id)) continue;
         _seenAlertIds.add(alert.id);
-        final isBreach = alert.type == 'GEOFENCE';
-        NotificationService().showAlertIfEnabled(
-          id: alert.id.hashCode,
-          alertType: alert.type,
-          title: isBreach ? '🚨 SAFE ZONE BREACH' : '🚨 ${alert.typeLabel}',
-          body: isBreach
-              ? 'Child LEFT the safe zone! Location: ${alert.latitude.toStringAsFixed(5)}, ${alert.longitude.toStringAsFixed(5)}  •  maps.google.com/?q=${alert.latitude},${alert.longitude}'
-              : "URGENT: Your child's AEGIS band reported ${alert.typeLabel}.",
-        );
+        // Any incoming WiFi alert is treated as an emergency: full-screen
+        // takeover + looping siren (foreground) or an unmissable full-screen
+        // notification (backgrounded/locked). See AlarmDispatcher.
+        AlarmDispatcher.raise(alert, _child);
       }
     });
   }

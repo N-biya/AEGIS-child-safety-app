@@ -16,11 +16,13 @@ MAX30105 MaxSensor;
  **************************************************************/
 #define FINGER_ON_THRESHOLD       7000
 #define FINGER_OFF_THRESHOLD      4000
+#define FINGER_OFF_DEBOUNCE       15    // samples below threshold before "finger removed"
 
 /**************************************************************
  * State
  **************************************************************/
 static bool fingerPresent = false;
+static int  fingerOffCount = 0;   // consecutive below-threshold samples (debounce)
 
 /**************************************************************
  * SpO2 (ratio-of-ratios) — buffer-free, low-noise
@@ -194,20 +196,36 @@ void MAX30102_Task(void *pvParameters)
                 fingerPresent =
                     true;
 
+                fingerOffCount = 0;
+
                 ResetMAX30102();
             }
 
             if(fingerPresent && ir < FINGER_OFF_THRESHOLD)
             {
-                fingerPresent =
-                    false;
+                // Debounce: a brief dip (finger shifting) should NOT wipe the
+                // beat pipeline — only a sustained absence counts as removal.
+                fingerOffCount++;
 
-                ResetMAX30102();
+                if(fingerOffCount >= FINGER_OFF_DEBOUNCE)
+                {
+                    fingerPresent =
+                        false;
 
+                    fingerOffCount = 0;
+
+                    ResetMAX30102();
+                }
+
+                // Skip this (poor) sample either way, but keep the accumulated
+                // beats through a momentary dip.
                 MaxSensor.nextSample();
 
                 continue;
             }
+
+            if(fingerPresent)
+                fingerOffCount = 0;   // signal recovered — clear the debounce
 
             if(!fingerPresent)
             {

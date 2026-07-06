@@ -6,7 +6,7 @@
  **************************************************************/
 #define MIN_RISE_AMOUNT        20.0f
 #define MIN_FALL_AMOUNT        20.0f
-#define MIN_PULSE_AMPLITUDE    80.0f
+#define MIN_PULSE_AMPLITUDE    45.0f   // was 80 — accepts slightly weaker beats so HR locks sooner
 #define REFRACTORY_MS          350
 
 /**************************************************************

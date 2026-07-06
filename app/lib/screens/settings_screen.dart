@@ -94,6 +94,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // ── Restricted (no-go) areas ─────────────────────────────────────────────
+  void _showForbiddenZonesSheet(ChildModel child) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _ForbiddenZonesSheet(
+        child: child,
+        onSave: (zones) => _firestore.updateForbiddenZones(child.id, zones),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark   = AegisT.isDark(context);
@@ -314,10 +327,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Column(children: [
                         _SettingsRow(
                           isDark: isDark, T: T, D: D, iconBg: kSafe,
-                          iconWidget: const Icon(Icons.location_on_outlined, color: Colors.white, size: 14),
-                          title: 'Geofence settings',
+                          iconWidget: const Icon(Icons.shield_outlined, color: Colors.white, size: 14),
+                          title: 'Safe zone',
                           detail: child?.geofence == null ? 'Not set' : '${child!.geofence!.radiusMeters.round()}m radius',
                           onTap: child == null ? null : () => _showGeofenceSheet(child),
+                        ),
+                        _Divider(isDark: isDark),
+                        _SettingsRow(
+                          isDark: isDark, T: T, D: D, iconBg: kAlert,
+                          iconWidget: const Icon(Icons.block, color: Colors.white, size: 14),
+                          title: 'Restricted areas',
+                          detail: (child?.forbiddenZones.isEmpty ?? true)
+                              ? 'None set'
+                              : '${child!.forbiddenZones.length} no-go zone${child.forbiddenZones.length == 1 ? '' : 's'}',
+                          onTap: child == null ? null : () => _showForbiddenZonesSheet(child),
                         ),
                         _Divider(isDark: isDark),
                         _SettingsRow(
@@ -1092,6 +1115,253 @@ class _GeofenceSheetState extends State<_GeofenceSheet> {
           const SizedBox(height: 10),
           _sheetPrimaryButton(context, 'Save geofence', hasLocation ? _submit : null, loading: _saving),
         ],
+      ),
+    );
+  }
+}
+
+// ── Restricted (no-go) areas sheet ──────────────────────────────────────────
+class _ForbiddenZonesSheet extends StatefulWidget {
+  final ChildModel child;
+  final Future<void> Function(List<ForbiddenZoneModel> zones) onSave;
+  const _ForbiddenZonesSheet({required this.child, required this.onSave});
+
+  @override
+  State<_ForbiddenZonesSheet> createState() => _ForbiddenZonesSheetState();
+}
+
+class _ForbiddenZonesSheetState extends State<_ForbiddenZonesSheet> {
+  late List<ForbiddenZoneModel> _zones;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _zones = [...widget.child.forbiddenZones];
+  }
+
+  Future<void> _add() async {
+    final picked = await Navigator.of(context).push<LatLng>(
+      MaterialPageRoute(builder: (_) => const SafeZonePickerScreen()),
+    );
+    if (picked == null || !mounted) return;
+    final details = await showDialog<({String name, double radius})>(
+      context: context,
+      builder: (_) => const _ForbiddenZoneDetailsDialog(),
+    );
+    if (details == null) return;
+    setState(() {
+      _zones.add(ForbiddenZoneModel(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        name: details.name.isEmpty ? 'Restricted area' : details.name,
+        lat: picked.latitude,
+        lng: picked.longitude,
+        radiusMeters: details.radius,
+      ));
+    });
+  }
+
+  void _remove(String id) =>
+      setState(() => _zones.removeWhere((z) => z.id == id));
+
+  Future<void> _submit() async {
+    setState(() => _saving = true);
+    await widget.onSave(_zones);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = AegisT.isDark(context);
+    final T = AegisT.text(context);
+    final D = AegisT.textDim(context);
+
+    return _Sheet(
+      title: 'Restricted areas',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "You'll be alerted if your child spends time in any of these no-go "
+            "zones. Briefly passing by won't trigger an alert.",
+            style: AegisText.caption(color: D).copyWith(fontSize: 12, height: 1.4),
+          ),
+          const SizedBox(height: 16),
+          if (_zones.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 22),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                color: isDark ? const Color(0x0FFFFFFF) : const Color(0x0A7C3AED),
+              ),
+              child: Text('No restricted areas yet',
+                  style: AegisText.caption(color: D).copyWith(fontSize: 12)),
+            )
+          else
+            ..._zones.map((z) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: isDark ? const Color(0x0FFFFFFF) : const Color(0x0A7C3AED),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.block, color: kAlert, size: 18),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(z.name,
+                                  style: AegisText.body(color: T).copyWith(
+                                      fontSize: 13, fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 1),
+                              Text(
+                                '${z.radiusMeters.round()}m · ${z.lat.toStringAsFixed(4)}, ${z.lng.toStringAsFixed(4)}',
+                                style: AegisText.caption(color: D).copyWith(fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => _remove(z.id),
+                          behavior: HitTestBehavior.opaque,
+                          child: Icon(Icons.close_rounded, color: D, size: 18),
+                        ),
+                      ],
+                    ),
+                  ),
+                )),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: _add,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                color: kAlert.withValues(alpha: 0.12),
+                border: Border.all(color: kAlert.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add_location_alt_outlined, color: kAlert, size: 18),
+                  const SizedBox(width: 8),
+                  Text('Add restricted area',
+                      style: AegisText.body(color: kAlert)
+                          .copyWith(fontSize: 13, fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _sheetPrimaryButton(context, 'Save', _submit, loading: _saving),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Name + radius entry for a new restricted area ───────────────────────────
+class _ForbiddenZoneDetailsDialog extends StatefulWidget {
+  const _ForbiddenZoneDetailsDialog();
+
+  @override
+  State<_ForbiddenZoneDetailsDialog> createState() =>
+      _ForbiddenZoneDetailsDialogState();
+}
+
+class _ForbiddenZoneDetailsDialogState
+    extends State<_ForbiddenZoneDetailsDialog> {
+  final _nameCtrl = TextEditingController();
+  double _radius = 80;
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = AegisT.isDark(context);
+    final T = AegisT.text(context);
+    final D = AegisT.textDim(context);
+
+    return Dialog(
+      backgroundColor: isDark ? kDarkBg : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Name this area',
+                style: AegisText.h5(color: T)
+                    .copyWith(fontSize: 17, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _nameCtrl,
+              style: AegisText.body(color: T).copyWith(fontSize: 14),
+              decoration: _sheetInputDecoration(context, hint: 'e.g. Old construction site'),
+            ),
+            _sheetLabel('Trigger radius', D),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Radius', style: AegisText.body(color: T).copyWith(fontSize: 13, fontWeight: FontWeight.w600)),
+                Text('${_radius.round()} m', style: AegisText.h5(color: kAlert).copyWith(fontSize: 13, fontWeight: FontWeight.w700)),
+              ],
+            ),
+            SliderTheme(
+              data: SliderThemeData(
+                activeTrackColor: kAlert,
+                inactiveTrackColor: isDark ? const Color(0x0FFFFFFF) : const Color(0x14F43F5E),
+                thumbColor: Colors.white,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                overlayColor: const Color(0x26F43F5E),
+                trackHeight: 6,
+              ),
+              child: Slider(
+                value: _radius,
+                min: 30,
+                max: 500,
+                onChanged: (v) => setState(() => _radius = v),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('Cancel', style: AegisText.label(color: D).copyWith(fontWeight: FontWeight.w700)),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(
+                      (name: _nameCtrl.text.trim(), radius: _radius)),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: kAlert,
+                    ),
+                    child: Text('Add',
+                        style: AegisText.label(color: Colors.white)
+                            .copyWith(fontWeight: FontWeight.w800)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

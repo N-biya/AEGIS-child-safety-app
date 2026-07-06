@@ -91,6 +91,25 @@ class FirestoreService {
     await _children.doc(childId).update({'geofence': geofence.toMap()});
   }
 
+  /// Replaces the child's list of forbidden (no-go) zones. The band reads this
+  /// array from the child doc and does the on-device dwell check.
+  Future<void> updateForbiddenZones(
+      String childId, List<ForbiddenZoneModel> zones) async {
+    await _children.doc(childId).update({
+      'forbiddenZones': zones.map((z) => z.toMap()).toList(),
+    });
+  }
+
+  /// Publishes the parent phone's current location to the child doc. In demo
+  /// mode the band mirrors this as its own position, so setting the safe zone
+  /// to "my current location" doesn't false-alarm while stationary.
+  Future<void> updateDeviceLocation(
+      String childId, double lat, double lng) async {
+    await _children.doc(childId).update({
+      'deviceLocation': {'lat': lat, 'lng': lng},
+    });
+  }
+
   /// Updates name/age/photo for a child profile. Pass only the fields that
   /// changed; omitted fields are left untouched.
   Future<void> updateChildProfile(

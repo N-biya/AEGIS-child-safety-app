@@ -23,6 +23,7 @@ void GPS_Init(void)
     Features.lat = 0.0;
     Features.lng = 0.0;
     Features.gps_fix = 0;
+    Features.phone_loc_valid = 0;
 
     Serial.println("GPS Initialized (GPIO 6 @ 9600)");
 }
@@ -38,10 +39,19 @@ void GPS_Task(void *pvParameters)
             gps.encode(GPSSerial.read());
 
 #if SIMULATE_GPS
-        // Indoor-demo mode: pretend we have a fixed fix so the geofence
-        // logic can be exercised without a sky view.
-        Features.lat = SIM_LAT;
-        Features.lng = SIM_LNG;
+        // Indoor-demo mode: no sky view. Mirror the parent's phone location
+        // (pushed by the app) so a "current location" safe zone doesn't
+        // false-alarm; fall back to the fixed SIM point until one arrives.
+        if(Features.phone_loc_valid)
+        {
+            Features.lat = Features.phone_lat;
+            Features.lng = Features.phone_lng;
+        }
+        else
+        {
+            Features.lat = SIM_LAT;
+            Features.lng = SIM_LNG;
+        }
         Features.gps_fix = 1;
 #else
         if(gps.location.isValid())

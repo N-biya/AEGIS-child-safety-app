@@ -22,6 +22,42 @@ class GeofenceModel {
       };
 }
 
+/// A place the child must NOT go. The band checks these on-device and raises a
+/// 'FORBIDDEN' alert if the child dwells inside one (a brief pass-through does
+/// not count — dwell handling lives in the firmware).
+class ForbiddenZoneModel {
+  final String id;
+  final String name;
+  final double lat;
+  final double lng;
+  final double radiusMeters;
+
+  const ForbiddenZoneModel({
+    required this.id,
+    required this.name,
+    required this.lat,
+    required this.lng,
+    required this.radiusMeters,
+  });
+
+  factory ForbiddenZoneModel.fromMap(Map<String, dynamic> map) =>
+      ForbiddenZoneModel(
+        id:           map['id'] as String? ?? '',
+        name:         map['name'] as String? ?? 'Restricted area',
+        lat:          (map['lat'] as num).toDouble(),
+        lng:          (map['lng'] as num).toDouble(),
+        radiusMeters: (map['radiusMeters'] as num).toDouble(),
+      );
+
+  Map<String, dynamic> toMap() => {
+        'id':           id,
+        'name':         name,
+        'lat':          lat,
+        'lng':          lng,
+        'radiusMeters': radiusMeters,
+      };
+}
+
 class EmergencyContactModel {
   final String id;
   final String name;
@@ -75,6 +111,7 @@ class ChildModel {
   final String deviceId;
   final String photoUrl;
   final GeofenceModel? geofence;
+  final List<ForbiddenZoneModel> forbiddenZones;
   final List<EmergencyContactModel> emergencyContacts;
   final bool calibrated;
   final int daysCollected;
@@ -86,6 +123,7 @@ class ChildModel {
     required this.deviceId,
     this.photoUrl = '',
     this.geofence,
+    this.forbiddenZones = const [],
     required this.emergencyContacts,
     required this.calibrated,
     required this.daysCollected,
@@ -100,6 +138,9 @@ class ChildModel {
         geofence:          map['geofence'] != null
             ? GeofenceModel.fromMap(map['geofence'] as Map<String, dynamic>)
             : null,
+        forbiddenZones:    (map['forbiddenZones'] as List<dynamic>? ?? [])
+            .map((e) => ForbiddenZoneModel.fromMap(e as Map<String, dynamic>))
+            .toList(),
         emergencyContacts: (map['emergencyContacts'] as List<dynamic>? ?? [])
             .map((e) => EmergencyContactModel.fromMap(e as Map<String, dynamic>))
             .toList(),
@@ -113,6 +154,7 @@ class ChildModel {
         'deviceId':          deviceId,
         'photoUrl':          photoUrl,
         'geofence':          geofence?.toMap(),
+        'forbiddenZones':    forbiddenZones.map((z) => z.toMap()).toList(),
         'emergencyContacts': emergencyContacts.map((c) => c.toMap()).toList(),
         'calibrated':        calibrated,
         'daysCollected':     daysCollected,

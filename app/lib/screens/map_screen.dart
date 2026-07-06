@@ -23,7 +23,11 @@ import '../widgets/sos_button.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  /// When set (e.g. a location shared into AEGIS from Google Maps), the map
+  /// opens centered on this point with a pin dropped there.
+  final LatLng? focusLocation;
+
+  const MapScreen({super.key, this.focusLocation});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -66,6 +70,12 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.focusLocation != null) {
+      _searchPin = widget.focusLocation;
+      // Controller isn't attached on the first frame — move after layout.
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _moveMap(widget.focusLocation!, 16));
+    }
     _loadAll();
   }
 
@@ -95,7 +105,10 @@ class _MapScreenState extends State<MapScreen> {
     });
     // Move map to loaded position (controller may not be attached yet — the
     // FlutterMap's initialCenter covers that first frame, so a throw is fine).
-    if (_childPos != null) {
+    // A shared-in focus location wins over the child/safe-zone default.
+    if (widget.focusLocation != null) {
+      _moveMap(widget.focusLocation!, 16);
+    } else if (_childPos != null) {
       _moveMap(_childPos!);
     } else if (_safeZoneCenter != null) {
       _moveMap(_safeZoneCenter!);
@@ -749,7 +762,7 @@ class _MapScreenState extends State<MapScreen> {
     final T      = AegisT.text(context);
     final D      = AegisT.textDim(context);
 
-    final defaultCenter = _childPos ?? _safeZoneCenter ?? const LatLng(31.5204, 74.3587);
+    final defaultCenter = widget.focusLocation ?? _childPos ?? _safeZoneCenter ?? const LatLng(31.5204, 74.3587);
 
     return Scaffold(
       body: Stack(
