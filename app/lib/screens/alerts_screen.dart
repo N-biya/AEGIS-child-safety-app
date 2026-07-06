@@ -60,6 +60,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
       case 'ELEVATED':
         return 'Stress';
       case 'GEOFENCE':
+      case 'FORBIDDEN':
         return 'Geofence';
       default:
         return 'Vitals';
@@ -398,10 +399,11 @@ class _AlertTile extends StatelessWidget {
 
   IconData get _icon {
     switch (alert.type) {
-      case 'STRESS':   return Icons.bolt_rounded;
-      case 'ELEVATED': return Icons.favorite_rounded;
-      case 'SPO2':     return Icons.air_rounded;
-      default:         return Icons.location_on_outlined;
+      case 'STRESS':    return Icons.bolt_rounded;
+      case 'ELEVATED':  return Icons.favorite_rounded;
+      case 'SPO2':      return Icons.air_rounded;
+      case 'FORBIDDEN': return Icons.block_rounded;
+      default:          return Icons.location_on_outlined;
     }
   }
 
@@ -409,9 +411,10 @@ class _AlertTile extends StatelessWidget {
     switch (alert.type) {
       case 'STRESS':   return 'Elevated stress · HR ${alert.heartRate} bpm';
       case 'ELEVATED': return 'Elevated heart rate · ${alert.heartRate} bpm';
-      case 'SPO2':     return 'Low oxygen · SpO₂ ${alert.spo2}%';
-      case 'GEOFENCE': return 'Left the designated safe zone';
-      default:         return alert.typeLabel;
+      case 'SPO2':      return 'Low oxygen · SpO₂ ${alert.spo2}%';
+      case 'GEOFENCE':  return 'Left the designated safe zone';
+      case 'FORBIDDEN': return 'Entered a restricted (no-go) area';
+      default:          return alert.typeLabel;
     }
   }
 

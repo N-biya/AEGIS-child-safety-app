@@ -44,6 +44,13 @@ typedef struct
     double  lng;
     uint8_t gps_fix;     // 1 = valid GPS fix available
 
+    // Parent's phone location, pushed up by the app. In SIMULATE_GPS demo
+    // mode the band uses this as its own position so it mirrors the phone
+    // (a "current location" safe zone then never false-alarms).
+    double  phone_lat;
+    double  phone_lng;
+    uint8_t phone_loc_valid;  // 1 = a phone location has been received
+
     /**************************************************************
     * AI Features
     **************************************************************/

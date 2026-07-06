@@ -51,6 +51,14 @@ dependencies:
   # AEGIS band connection
   flutter_blue_plus: ^1.32.12
 
+  # Emergency full-screen alarm (loud looping siren + vibration)
+  audioplayers: ^6.1.0
+  vibration: ^2.0.0
+
+  # Receive a location shared into AEGIS from Google Maps' share sheet.
+  # Pinned to 1.8.1 — 1.9.0 requires AGP 9.2 / Kotlin 2.4 (project is on AGP 8.11).
+  receive_sharing_intent: 1.8.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -63,3 +71,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/audio/

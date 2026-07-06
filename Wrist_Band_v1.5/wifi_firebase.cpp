@@ -32,6 +32,19 @@ static unsigned long lastGeofenceRefreshMs = 0;
 static unsigned long lastBreachAlertMs     = 0;
 static bool          wasOutside            = false;
 
+/* Forbidden (no-go) zones cached from the cloud. The band alerts only after
+ * the child DWELLS inside one (~FORBIDDEN_DWELL_HITS cycles), so a brief
+ * pass-through does not trigger. This is entirely separate from the safe zone
+ * above — the safe-zone logic is unchanged. */
+#define MAX_FORBIDDEN        8
+#define FORBIDDEN_DWELL_HITS 4   // 4 x UPLOAD_INTERVAL_MS (15s) ≈ 60s inside
+static int    forbiddenCount = 0;
+static double fzLat[MAX_FORBIDDEN];
+static double fzLng[MAX_FORBIDDEN];
+static double fzRad[MAX_FORBIDDEN];
+static int    fzDwell[MAX_FORBIDDEN]   = {0};
+static bool   fzAlerted[MAX_FORBIDDEN] = {false};
+
 /**************************************************************
  * Tiny JSON string extractor:  "key":"value"  ->  value
  * (avoids pulling in a JSON library for these known responses)
@@ -91,6 +104,32 @@ static double jsonNumber(const String &src, const char *key, bool *ok)
     if(q == p) return 0.0;
     if(ok) *ok = true;
     return src.substring(p, q).toDouble();
+}
+
+/* Returns the balanced-brace JSON block for a named field, e.g. for
+ *   "geofence":{ ... }   returns the { ... } substring (empty if absent).
+ * Lets number lookups be scoped to ONE field, so other same-named keys in the
+ * same document (deviceLocation.lat, forbiddenZones[].lat) can't be misread. */
+static String jsonFieldBlock(const String &src, const char *field)
+{
+    int i = src.indexOf(String("\"") + field + "\"");
+    if(i < 0) return "";
+
+    int b = src.indexOf('{', i);
+    if(b < 0) return "";
+
+    int depth = 0;
+    for(int p = b; p < (int)src.length(); p++)
+    {
+        char c = src.charAt(p);
+        if(c == '{') depth++;
+        else if(c == '}')
+        {
+            depth--;
+            if(depth == 0) return src.substring(b, p + 1);
+        }
+    }
+    return "";
 }
 
 /* Great-circle distance between two lat/lng points, in metres. */
@@ -340,6 +379,45 @@ static bool uploadVital(void)
     return false;
 }
 
+/* Parse the "forbiddenZones" array from the child-doc response into the fzXxx
+ * tables. Each zone is a mapValue with lat/lng/radiusMeters; we scope each read
+ * to the substring after its own key so values aren't crossed between zones. */
+static void parseForbiddenZones(const String &resp)
+{
+    forbiddenCount = 0;
+
+    String block = jsonFieldBlock(resp, "forbiddenZones");
+    if(block.length() == 0) return;
+
+    int cursor = 0;
+    while(forbiddenCount < MAX_FORBIDDEN)
+    {
+        int latPos = block.indexOf("\"lat\"", cursor);
+        if(latPos < 0) break;
+        int lngPos = block.indexOf("\"lng\"", latPos);
+        if(lngPos < 0) break;
+        int radPos = block.indexOf("\"radiusMeters\"", lngPos);
+        if(radPos < 0) break;
+
+        bool okLa = false, okLn = false, okRd = false;
+        double la = jsonNumber(block.substring(latPos), "lat", &okLa);
+        double ln = jsonNumber(block.substring(lngPos), "lng", &okLn);
+        double rd = jsonNumber(block.substring(radPos), "radiusMeters", &okRd);
+
+        if(okLa && okLn && okRd && rd > 0.0)
+        {
+            fzLat[forbiddenCount] = la;
+            fzLng[forbiddenCount] = ln;
+            fzRad[forbiddenCount] = rd;
+            forbiddenCount++;
+        }
+
+        cursor = radPos + 10;  // move past this zone
+    }
+
+    Serial.printf("Forbidden zones loaded: %d\n", forbiddenCount);
+}
+
 /**************************************************************
  * Geofence — read the parent's safe zone from the child doc.
  * The device account is allowed to READ the child document
@@ -369,10 +447,14 @@ static void readGeofence(void)
 
     if(code != 200) return;
 
-    bool okLat, okLng, okRad;
-    double la = jsonNumber(resp, "lat", &okLat);
-    double ln = jsonNumber(resp, "lng", &okLng);
-    double rd = jsonNumber(resp, "radiusMeters", &okRad);
+    // Safe zone — scope the lookup to the "geofence" field so the new
+    // deviceLocation / forbiddenZones fields (which also carry "lat") can't be
+    // picked up by the first-match number parser.
+    String gf = jsonFieldBlock(resp, "geofence");
+    bool okLat = false, okLng = false, okRad = false;
+    double la = jsonNumber(gf, "lat", &okLat);
+    double ln = jsonNumber(gf, "lng", &okLng);
+    double rd = jsonNumber(gf, "radiusMeters", &okRad);
 
     if(okLat && okLng && okRad && rd > 0.0)
     {
@@ -385,6 +467,24 @@ static void readGeofence(void)
         fenceValid = false;
         Serial.println("Geofence: not set by parent yet");
     }
+
+    // Parent's phone location — the band mirrors this as its own position in
+    // SIMULATE_GPS demo mode (see gps.cpp), so a "current location" safe zone
+    // does not false-alarm while stationary.
+    String dl = jsonFieldBlock(resp, "deviceLocation");
+    bool okPLat = false, okPLng = false;
+    double plat = jsonNumber(dl, "lat", &okPLat);
+    double plng = jsonNumber(dl, "lng", &okPLng);
+    if(okPLat && okPLng)
+    {
+        Features.phone_lat = plat;
+        Features.phone_lng = plng;
+        Features.phone_loc_valid = 1;
+        Serial.printf("Phone location: %.5f,%.5f\n", plat, plng);
+    }
+
+    // Restricted (no-go) zones.
+    parseForbiddenZones(resp);
 }
 
 /* Raise an alert in Firestore (app reads it + can push a notification).
@@ -461,6 +561,39 @@ static void checkGeofence(void)
     wasOutside = outside;
 }
 
+/* Check current location against each forbidden (no-go) zone. Alerts only
+ * after the child DWELLS inside (~FORBIDDEN_DWELL_HITS cycles ≈ 60s), so a
+ * brief pass-through never triggers. One alert per visit; re-arms on leaving. */
+static void checkForbiddenZones(void)
+{
+    if(!Features.gps_fix) return;
+
+    for(int i = 0; i < forbiddenCount; i++)
+    {
+        double dist   = haversine(Features.lat, Features.lng, fzLat[i], fzLng[i]);
+        bool   inside = dist <= fzRad[i];
+
+        if(inside)
+        {
+            if(fzDwell[i] < 100000) fzDwell[i]++;
+
+            if(fzDwell[i] >= FORBIDDEN_DWELL_HITS && !fzAlerted[i])
+            {
+                Serial.printf("FORBIDDEN zone %d entered (dwelled %ds)\n",
+                              i, fzDwell[i] * (UPLOAD_INTERVAL_MS / 1000));
+                writeAlert("FORBIDDEN");            // WiFi -> app (full-screen alarm)
+                SIM_SendAlert("RESTRICTED AREA");   // SMS backup (no-op if SIM off)
+                fzAlerted[i] = true;                // one alert per visit
+            }
+        }
+        else
+        {
+            fzDwell[i]   = 0;
+            fzAlerted[i] = false;                   // re-arm once they leave
+        }
+    }
+}
+
 /**************************************************************
  * Public init + task
  **************************************************************/
@@ -507,6 +640,9 @@ void WiFiFirebase_Task(void *pvParameters)
 
                 // Check current location against the safe zone.
                 checkGeofence();
+
+                // Check current location against the forbidden (no-go) zones.
+                checkForbiddenZones();
             }
         }
 

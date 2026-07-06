@@ -34,6 +34,7 @@ class AlertModel {
     switch (type) {
       case 'STRESS':    return 'Stress Detected';
       case 'GEOFENCE':  return 'Location Breach';
+      case 'FORBIDDEN': return 'Restricted Area';
       case 'SPO2':      return 'Low SpO2';
       case 'ELEVATED':  return 'Elevated Reading';
       default:          return type;
