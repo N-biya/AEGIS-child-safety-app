@@ -90,6 +90,10 @@ static uint8_t CountStress(void)
 }
 
 #define VIBRATOR_PIN 13
+#define MAX_VIBRATE_MS 5000   // cap each buzz so a stuck/sustained stress flag can't vibrate endlessly
+
+static unsigned long vibrateStartMs = 0;   // when the current buzz started
+static uint8_t       vibPrevAlert   = 0;   // previous stress_alert, for rising-edge detection
 
 void StressAI_Init(void)
 {
@@ -129,6 +133,10 @@ void StressAI_Task(
 
         if(!sensorsValid)
         {
+            // No valid reading (e.g. finger off the HR sensor) — we can't
+            // assert stress, so never leave the wrist buzzing here.
+            digitalWrite(VIBRATOR_PIN, LOW);
+
             vTaskDelayUntil(
                 &xLastWakeTime,
                 pdMS_TO_TICKS(2000)
@@ -232,8 +240,15 @@ void StressAI_Task(
         if(!moving && Features.hr_mean > (BASE_HR_MEAN + 5.0f))
             Features.stress_alert = 1;
 
-        // Buzz the child's wrist while a stress alert is active.
-        digitalWrite(VIBRATOR_PIN, Features.stress_alert ? HIGH : LOW);
+        // Buzz the wrist when a stress alert STARTS, but cap it to
+        // MAX_VIBRATE_MS so a sustained/stuck alert can't vibrate endlessly.
+        if(Features.stress_alert == 1 && vibPrevAlert == 0)
+            vibrateStartMs = millis();   // new episode — (re)start the buzz timer
+        vibPrevAlert = Features.stress_alert;
+
+        bool buzz = (Features.stress_alert == 1) &&
+                    (millis() - vibrateStartMs < MAX_VIBRATE_MS);
+        digitalWrite(VIBRATOR_PIN, buzz ? HIGH : LOW);
 
         vTaskDelayUntil(
             &xLastWakeTime,

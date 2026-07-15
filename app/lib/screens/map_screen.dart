@@ -892,15 +892,17 @@ class _MapScreenState extends State<MapScreen> {
           ),
 
           // ── "Open in Google Maps" (free link — full Google data) ──────
+          // Stacked under the SOS button on the right so the map's floating
+          // controls sit in one tidy column instead of split across corners.
           if (_childPos != null)
             Positioned(
-              top:  MediaQuery.of(context).padding.top + 78,
-              left: 16,
+              top:   MediaQuery.of(context).padding.top + 140,
+              right: 16,
               child: GestureDetector(
                 onTap: _openChildInGoogleMaps,
                 child: Container(
                   height: 44,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(22),
                     color: isDark ? const Color(0xE62D1A4A) : Colors.white,
@@ -914,10 +916,10 @@ class _MapScreenState extends State<MapScreen> {
                     children: [
                       Icon(Icons.map_outlined, size: 18, color: kAccent),
                       const SizedBox(width: 6),
-                      Text('Google Maps',
+                      Text('Maps',
                           style: AegisText.label(color: T)
                               .copyWith(fontWeight: FontWeight.w700, fontSize: 12)),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 3),
                       Icon(Icons.open_in_new_rounded, size: 13, color: AegisT.textDim(context)),
                     ],
                   ),
@@ -1164,12 +1166,30 @@ class _DraggablePanel extends StatelessWidget {
               ),
 
               if (childPos != null) ...[
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: onSetChildLoc,
-                  child: Text('Change child location →',
-                      style: AegisText.label(color: kAccent)
-                          .copyWith(fontSize: 12)),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: GestureDetector(
+                    onTap: onSetChildLoc,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        color: kAccent.withValues(alpha: 0.10),
+                        border: Border.all(color: kAccent.withValues(alpha: 0.30)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.edit_location_alt_outlined, size: 14, color: kAccent),
+                          const SizedBox(width: 6),
+                          Text('Change child location',
+                              style: AegisText.label(color: kAccent)
+                                  .copyWith(fontSize: 12, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ],
 

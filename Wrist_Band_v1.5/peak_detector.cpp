@@ -7,7 +7,8 @@
 #define MIN_RISE_AMOUNT        20.0f
 #define MIN_FALL_AMOUNT        20.0f
 #define MIN_PULSE_AMPLITUDE    45.0f   // was 80 — accepts slightly weaker beats so HR locks sooner
-#define REFRACTORY_MS          350
+#define REFRACTORY_MS          450     // was 350 — longer dead-zone rejects the dicrotic-notch
+                                       // "second bump", so HR isn't double-counted (no false 115/130)
 
 /**************************************************************
  * Detector Variables

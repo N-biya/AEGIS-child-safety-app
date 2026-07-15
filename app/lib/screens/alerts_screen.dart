@@ -30,6 +30,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
   final _firestore = FirestoreService();
   StreamSubscription<List<AlertModel>>? _alertSub;
   List<AlertModel> _alerts = [];
+  String? _childId;
 
   @override
   void initState() {
@@ -48,10 +49,47 @@ class _AlertsScreenState extends State<AlertsScreen> {
     if (uid.isEmpty) return;
     _firestore.watchChildForUser(uid).first.then((child) {
       if (child == null || !mounted) return;
+      _childId = child.id;
       _alertSub = _firestore.watchAlerts(child.id).listen((alerts) {
         if (mounted) setState(() => _alerts = alerts);
       });
     });
+  }
+
+  Future<void> _clearAll() async {
+    final cid = _childId;
+    if (cid == null || _alerts.isEmpty) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final isDark = AegisT.isDark(ctx);
+        final T = AegisT.text(ctx);
+        final D = AegisT.textDim(ctx);
+        return AlertDialog(
+          backgroundColor: isDark ? kDarkBg : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Clear all alerts?',
+              style: AegisText.h5(color: T).copyWith(fontSize: 17, fontWeight: FontWeight.w700)),
+          content: Text('This permanently deletes all ${_alerts.length} alerts from history.',
+              style: AegisText.body(color: D).copyWith(fontSize: 13.5, height: 1.4)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text('Cancel', style: AegisText.label(color: D).copyWith(fontWeight: FontWeight.w700)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text('Clear all', style: AegisText.label(color: kAlert).copyWith(fontWeight: FontWeight.w800)),
+            ),
+          ],
+        );
+      },
+    );
+    if (ok != true) return;
+    setState(() => _alerts = []);
+    try {
+      await _firestore.clearAllAlerts(cid);
+    } catch (_) {/* offline — the stream will restore them */}
   }
 
   String _typeBucket(String type) {
@@ -145,42 +183,62 @@ class _AlertsScreenState extends State<AlertsScreen> {
                           ),
                         ],
                       ),
-                      GestureDetector(
-                        onTap: _openFilterSheet,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: _hasActiveFilters
-                                    ? kAccent.withValues(alpha: 0.18)
-                                    : (isDark ? const Color(0x0FFFFFFF) : const Color(0xB3FFFFFF)),
-                                border: Border.all(
-                                  color: _hasActiveFilters ? kAccent : AegisT.glassBorder(context),
+                      Row(
+                        children: [
+                          if (_alerts.isNotEmpty) ...[
+                            GestureDetector(
+                              onTap: _clearAll,
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: isDark ? const Color(0x0FFFFFFF) : const Color(0xB3FFFFFF),
+                                  border: Border.all(color: AegisT.glassBorder(context)),
                                 ),
+                                child: Icon(Icons.delete_sweep_outlined, size: 19, color: kAlert),
                               ),
-                              child: Icon(Icons.tune_rounded, size: 18,
-                                  color: _hasActiveFilters ? kAccent : T),
                             ),
-                            if (_hasActiveFilters)
-                              Positioned(
-                                top: -2,
-                                right: -2,
-                                child: Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: kAccent,
-                                    border: Border.all(color: AegisT.bg(context), width: 2),
-                                  ),
-                                ),
-                              ),
+                            const SizedBox(width: 10),
                           ],
-                        ),
+                          GestureDetector(
+                            onTap: _openFilterSheet,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: _hasActiveFilters
+                                        ? kAccent.withValues(alpha: 0.18)
+                                        : (isDark ? const Color(0x0FFFFFFF) : const Color(0xB3FFFFFF)),
+                                    border: Border.all(
+                                      color: _hasActiveFilters ? kAccent : AegisT.glassBorder(context),
+                                    ),
+                                  ),
+                                  child: Icon(Icons.tune_rounded, size: 18,
+                                      color: _hasActiveFilters ? kAccent : T),
+                                ),
+                                if (_hasActiveFilters)
+                                  Positioned(
+                                    top: -2,
+                                    right: -2,
+                                    child: Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: kAccent,
+                                        border: Border.all(color: AegisT.bg(context), width: 2),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -244,7 +302,28 @@ class _AlertsScreenState extends State<AlertsScreen> {
                           padding: EdgeInsets.fromLTRB(18, 0, 18, kNavBarHeight + 16),
                           itemCount: alerts.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (_, i) => _AlertTile(alert: alerts[i], isDark: isDark, T: T, D: D),
+                          itemBuilder: (_, i) {
+                            final alert = alerts[i];
+                            return Dismissible(
+                              key: ValueKey(alert.id),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 22),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  color: kAlert.withValues(alpha: 0.15),
+                                ),
+                                child: const Icon(Icons.delete_outline_rounded, color: kAlert),
+                              ),
+                              onDismissed: (_) {
+                                setState(() => _alerts.removeWhere((a) => a.id == alert.id));
+                                final cid = _childId;
+                                if (cid != null) _firestore.deleteAlert(cid, alert.id);
+                              },
+                              child: _AlertTile(alert: alert, isDark: isDark, T: T, D: D),
+                            );
+                          },
                         ),
                 ),
               ],

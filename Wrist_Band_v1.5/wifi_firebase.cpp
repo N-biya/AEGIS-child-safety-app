@@ -214,8 +214,8 @@ static bool firebaseSignIn(void)
     client.setHandshakeTimeout(10);
 
     HTTPClient http;
-    http.setConnectTimeout(8000);
-    http.setTimeout(8000);
+    http.setConnectTimeout(4000);
+    http.setTimeout(4000);
 
     String url =
         String("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=")
@@ -266,8 +266,8 @@ static bool firebaseRefresh(void)
     client.setHandshakeTimeout(10);
 
     HTTPClient http;
-    http.setConnectTimeout(8000);
-    http.setTimeout(8000);
+    http.setConnectTimeout(4000);
+    http.setTimeout(4000);
 
     String url =
         String("https://securetoken.googleapis.com/v1/token?key=") + FIREBASE_API_KEY;
@@ -347,8 +347,8 @@ static bool uploadVital(void)
     client.setHandshakeTimeout(10);   // seconds — never hang on TLS
 
     HTTPClient http;
-    http.setConnectTimeout(8000);     // ms
-    http.setTimeout(8000);            // ms
+    http.setConnectTimeout(4000);     // ms
+    http.setTimeout(4000);            // ms
 
     String url =
         String("https://firestore.googleapis.com/v1/projects/") + FIREBASE_PROJECT_ID +
@@ -430,8 +430,8 @@ static void readGeofence(void)
     client.setHandshakeTimeout(10);
 
     HTTPClient http;
-    http.setConnectTimeout(8000);
-    http.setTimeout(8000);
+    http.setConnectTimeout(4000);
+    http.setTimeout(4000);
 
     String url =
         String("https://firestore.googleapis.com/v1/projects/") + FIREBASE_PROJECT_ID +
@@ -515,8 +515,8 @@ static bool writeAlert(const char *type)
     client.setHandshakeTimeout(10);
 
     HTTPClient http;
-    http.setConnectTimeout(8000);
-    http.setTimeout(8000);
+    http.setConnectTimeout(4000);
+    http.setTimeout(4000);
 
     String url =
         String("https://firestore.googleapis.com/v1/projects/") + FIREBASE_PROJECT_ID +
@@ -538,6 +538,13 @@ static bool writeAlert(const char *type)
 static void checkGeofence(void)
 {
     if(!fenceValid || !Features.gps_fix) return;
+
+#if SIMULATE_GPS
+    // Don't judge the safe zone until the band has the parent's real phone
+    // location. Before that it uses the fallback SIM point, which would fire a
+    // false breach for the first ~20s after every boot.
+    if(!Features.phone_loc_valid) return;
+#endif
 
     double dist = haversine(Features.lat, Features.lng, fenceLat, fenceLng);
     bool outside = dist > fenceRadius;
@@ -567,6 +574,12 @@ static void checkGeofence(void)
 static void checkForbiddenZones(void)
 {
     if(!Features.gps_fix) return;
+
+#if SIMULATE_GPS
+    // Same as the safe zone: wait for the real phone location before judging,
+    // so we don't fire off the fallback SIM point at startup.
+    if(!Features.phone_loc_valid) return;
+#endif
 
     for(int i = 0; i < forbiddenCount; i++)
     {
