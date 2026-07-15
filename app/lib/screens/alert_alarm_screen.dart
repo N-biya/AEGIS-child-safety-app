@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/alert_model.dart';
 import '../models/child_model.dart';
 import '../services/alarm_service.dart';
+import '../services/firestore_service.dart';
 import '../utils/aegis_text.dart';
 
 /// Full-screen, unmissable emergency takeover shown when the band raises an
@@ -54,6 +55,14 @@ class _AlertAlarmScreenState extends State<AlertAlarmScreen>
 
   Future<void> _dismiss() async {
     await AlarmService.instance.stop();
+    // Dismissing the alarm = you've handled it → mark the alert resolved so it
+    // doesn't linger as "unresolved" and pile up.
+    final child = widget.child;
+    if (child != null) {
+      try {
+        await FirestoreService().resolveAlert(child.id, widget.alert.id);
+      } catch (_) {/* offline — it stays unresolved, no harm */}
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

@@ -110,6 +110,23 @@ class FirestoreService {
     });
   }
 
+  /// Marks a single alert as resolved (handled) — keeps it in history.
+  Future<void> resolveAlert(String childId, String alertId) =>
+      _children.doc(childId).collection('alerts').doc(alertId)
+          .update({'resolved': true});
+
+  /// Permanently deletes a single alert.
+  Future<void> deleteAlert(String childId, String alertId) =>
+      _children.doc(childId).collection('alerts').doc(alertId).delete();
+
+  /// Deletes every alert for a child — the "Clear all" action.
+  Future<void> clearAllAlerts(String childId) async {
+    final snap = await _children.doc(childId).collection('alerts').get();
+    for (final d in snap.docs) {
+      await d.reference.delete();
+    }
+  }
+
   /// Updates name/age/photo for a child profile. Pass only the fields that
   /// changed; omitted fields are left untouched.
   Future<void> updateChildProfile(

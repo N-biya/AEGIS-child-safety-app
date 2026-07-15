@@ -79,3 +79,6 @@ make_integration_doc.py
 
 # Android build artifacts
 app/android/build/
+
+# Partner setup bundle (contains secrets — never commit)
+AEGIS_partner_setup.zip
